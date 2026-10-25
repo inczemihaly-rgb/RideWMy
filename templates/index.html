@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RIDEWMY - Erdélyi Telekocsi</title>
     
-    <!-- Bootstrap 5 CSS (Stabil cdnjs CDN) -->
+    <!-- Bootstrap 5 CSS (cdnjs CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
@@ -139,6 +139,13 @@
     <!-- Fő tartalom konténer -->
     <div class="container py-4" style="max-width: 820px;">
 
+        <!-- Értesítő üzenet sikeres foglaláskor -->
+        <div id="booking-alert" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong>Sikeres foglalási igény!</strong> Értesítettük a sofőrt, aki hamarosan megerősíti a jelentkezésedet.
+            <button type="button" class="btn-close" onclick="document.getElementById('booking-alert').classList.add('d-none')"></button>
+        </div>
+
         <!-- 1. Kereső kártya -->
         <div class="card card-custom p-4 mb-4">
             <h2 class="font-bagel h3 mb-4">Hol szeretnél utazni?</h2>
@@ -204,7 +211,7 @@
 
             <div class="d-flex flex-column gap-3">
                 <!-- 1. Kártya -->
-                <div class="card card-custom p-3">
+                <div class="card card-custom p-3" id="ride-card-1">
                     <div class="row align-items-center g-3">
                         <div class="col-md-3 col-12 d-flex align-items-center gap-3">
                             <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 48px; height: 48px;">
@@ -228,16 +235,16 @@
                         </div>
                         <div class="col-md-4 col-12 d-flex justify-content-between align-items-center justify-content-md-end gap-3">
                             <div class="text-end">
-                                <span class="badge bg-light text-dark mb-1">2 szabad hely</span>
+                                <span class="badge bg-light text-dark mb-1"><span id="seats-1">2</span> szabad hely</span>
                                 <div class="fs-5 fw-bold text-dark">35 RON <small class="fs-6 text-muted font-normal">/ fő</small></div>
                             </div>
-                            <button class="btn btn-purple px-4 py-2">Részletek</button>
+                            <button class="btn btn-purple px-4 py-2" onclick="openBookingModal('Szilárd T.', '4.9', 'Marosvásárhely → Kolozsvár', '08:00', 35, 2, 1)">Részletek</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- 2. Kártya -->
-                <div class="card card-custom p-3">
+                <div class="card card-custom p-3" id="ride-card-2">
                     <div class="row align-items-center g-3">
                         <div class="col-md-3 col-12 d-flex align-items-center gap-3">
                             <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 48px; height: 48px;">
@@ -261,10 +268,10 @@
                         </div>
                         <div class="col-md-4 col-12 d-flex justify-content-between align-items-center justify-content-md-end gap-3">
                             <div class="text-end">
-                                <span class="badge bg-light text-dark mb-1">3 szabad hely</span>
+                                <span class="badge bg-light text-dark mb-1"><span id="seats-2">3</span> szabad hely</span>
                                 <div class="fs-5 fw-bold text-dark">35 RON <small class="fs-6 text-muted font-normal">/ fő</small></div>
                             </div>
-                            <button class="btn btn-purple px-4 py-2">Részletek</button>
+                            <button class="btn btn-purple px-4 py-2" onclick="openBookingModal('Eszter K.', '4.9', 'Marosvásárhely → Kolozsvár', '12:30', 35, 3, 2)">Részletek</button>
                         </div>
                     </div>
                 </div>
@@ -273,12 +280,64 @@
 
     </div>
 
-    <!-- Bootstrap 5 & Leaflet JS (Stabil cdnjs CDN) -->
+    <!-- #25 FOGLALÁSI MODÁL -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-bagel fs-4" id="bookingModalLabel">Utazás Részletei</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Sofőr infók -->
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3">
+                        <div class="avatar-btn fs-5" id="modal-avatar">SZ</div>
+                        <div>
+                            <h6 class="mb-0 fw-bold" id="modal-driver-name">Sofőr Neve</h6>
+                            <small class="text-warning"><i class="bi bi-star-fill"></i> <span id="modal-driver-rating">4.9</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Útvonal és időpont -->
+                    <div class="mb-3">
+                        <div class="text-muted small">Útvonal:</div>
+                        <div class="fw-semibold fs-5" id="modal-route">Marosvásárhely → Kolozsvár</div>
+                        <div class="text-muted small mt-2">Indulás: <strong id="modal-time" class="text-dark">08:00</strong></div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- Helyfoglalási beállítások -->
+                    <div class="row align-items-center g-3">
+                        <div class="col-6">
+                            <label for="seat-select" class="form-label small fw-medium text-muted">Foglalandó helyek:</label>
+                            <select id="seat-select" class="form-select bg-light border-0 fw-bold" onchange="calculateTotalPrice()">
+                                <option value="1">1 hely</option>
+                                <option value="2">2 hely</option>
+                            </select>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="small text-muted">Összesen fizetendő:</div>
+                            <div class="fs-4 fw-bold text-dark"><span id="modal-total-price">35</span> RON</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 p-4">
+                    <button type="button" class="btn btn-light w-100 py-2 fw-semibold mb-2" data-bs-dismiss="modal">Mégse</button>
+                    <button type="button" id="confirm-booking-btn" class="btn btn-purple w-100 py-2 fs-6">
+                        <i class="bi bi-check2-circle me-2"></i> Foglalás megerősítése
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 & Leaflet JS (cdnjs CDN) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <script>
-        // Koordináták Erdély főbb városaihoz (alapértelmezett fallback)
+        // Koordináták Erdély főbb városaihoz
         const cityCoords = {
             "Marosvásárhely": [46.5455, 24.5625],
             "Kolozsvár": [46.7712, 23.6236],
@@ -305,10 +364,9 @@
             map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
         }
 
-        // Kezdő útvonal rajzolása
         updateMapRoute(cityCoords["Marosvásárhely"], cityCoords["Kolozsvár"]);
 
-        // 2. Romániára szűkített OpenStreetMap Nominatim Autocomplete integráció (#18)
+        // 2. OpenStreetMap Autocomplete (Romániára szűkítve)
         function setupAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);
             const results = document.getElementById(resultsId);
@@ -342,7 +400,6 @@
                             data.forEach(item => {
                                 const div = document.createElement('div');
                                 div.className = 'autocomplete-item';
-                                
                                 const parts = item.display_name.split(',');
                                 const cityName = parts[0].trim();
                                 const county = parts[1] ? parts[1].trim() : '';
@@ -373,7 +430,6 @@
         setupAutocomplete('from-input', 'from-results');
         setupAutocomplete('to-input', 'to-results');
 
-        // Keresés gomb eseménykezelő
         document.getElementById('search-btn').addEventListener('click', () => {
             const fromInput = document.getElementById('from-input');
             const toInput = document.getElementById('to-input');
@@ -387,6 +443,69 @@
                 : (cityCoords[toInput.value] || [46.7712, 23.6236]);
 
             updateMapRoute(fromCoords, toCoords);
+        });
+
+        // 3. Foglalási logika (Modál feltöltése & dinamikus árszámítás)
+        let currentPricePerSeat = 35;
+        let activeRideId = null;
+
+        function openBookingModal(driverName, rating, route, time, price, availableSeats, rideId) {
+            activeRideId = rideId;
+            currentPricePerSeat = price;
+
+            document.getElementById('modal-driver-name').innerText = driverName;
+            document.getElementById('modal-driver-rating').innerText = rating;
+            document.getElementById('modal-avatar').innerText = driverName.split(' ').map(n => n[0]).join('');
+            document.getElementById('modal-route').innerText = route;
+            document.getElementById('modal-time').innerText = time;
+
+            // Szabad helyek feltöltése
+            const seatSelect = document.getElementById('seat-select');
+            seatSelect.innerHTML = '';
+            for (let i = 1; i <= availableSeats; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `${i} hely`;
+                seatSelect.appendChild(opt);
+            }
+
+            calculateTotalPrice();
+
+            const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            modal.show();
+        }
+
+        function calculateTotalPrice() {
+            const seats = parseInt(document.getElementById('seat-select').value);
+            document.getElementById('modal-total-price').innerText = seats * currentPricePerSeat;
+        }
+
+        document.getElementById('confirm-booking-btn').addEventListener('click', () => {
+            const bookedSeats = parseInt(document.getElementById('seat-select').value);
+            const seatsElem = document.getElementById(`seats-${activeRideId}`);
+            
+            if (seatsElem) {
+                let currentSeats = parseInt(seatsElem.innerText);
+                let newSeats = currentSeats - bookedSeats;
+                seatsElem.innerText = newSeats;
+
+                if (newSeats <= 0) {
+                    const card = document.getElementById(`ride-card-${activeRideId}`);
+                    const btn = card.querySelector('button');
+                    btn.disabled = true;
+                    btn.innerText = "Betelt";
+                    btn.classList.replace('btn-purple', 'btn-secondary');
+                }
+            }
+
+            // Modál bezárása & sikeres alert megjelenítése
+            const modalElem = document.getElementById('bookingModal');
+            const modal = bootstrap.Modal.getInstance(modalElem);
+            modal.hide();
+
+            const alertElem = document.getElementById('booking-alert');
+            alertElem.classList.remove('d-none');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     </script>
 </body>
