@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RIDEWMY - Erdélyi Telekocsi</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS (Stabil cdnjs CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -272,9 +273,9 @@
 
     </div>
 
-    <!-- Bootstrap 5 & Leaflet JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Bootstrap 5 & Leaflet JS (Stabil cdnjs CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <script>
         // Koordináták Erdély főbb városaihoz (alapértelmezett fallback)
@@ -307,7 +308,7 @@
         // Kezdő útvonal rajzolása
         updateMapRoute(cityCoords["Marosvásárhely"], cityCoords["Kolozsvár"]);
 
-        // 2. OpenStreetMap Nominatim Autocomplete integráció (#18)
+        // 2. Romániára szűkített OpenStreetMap Nominatim Autocomplete integráció (#18)
         function setupAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);
             const results = document.getElementById(resultsId);
@@ -323,11 +324,17 @@
                 }
 
                 timeout = setTimeout(() => {
-                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ro&limit=5`)
+                    const apiUrl = `https://nominatim.openstreetmap.org/search?format=json` +
+                        `&q=${encodeURIComponent(query)}` +
+                        `&countrycodes=ro` +
+                        `&limit=5` +
+                        `&accept-language=hu,ro`;
+
+                    fetch(apiUrl)
                         .then(res => res.json())
                         .then(data => {
                             results.innerHTML = '';
-                            if (data.length === 0) {
+                            if (!data || data.length === 0) {
                                 results.style.display = 'none';
                                 return;
                             }
@@ -335,9 +342,15 @@
                             data.forEach(item => {
                                 const div = document.createElement('div');
                                 div.className = 'autocomplete-item';
-                                div.innerText = item.display_name.split(',')[0] + ' (' + item.display_name.split(',')[1] + ')';
+                                
+                                const parts = item.display_name.split(',');
+                                const cityName = parts[0].trim();
+                                const county = parts[1] ? parts[1].trim() : '';
+                                
+                                div.innerText = county ? `${cityName} (${county})` : cityName;
+                                
                                 div.addEventListener('click', () => {
-                                    input.value = item.display_name.split(',')[0];
+                                    input.value = cityName;
                                     input.dataset.lat = item.lat;
                                     input.dataset.lon = item.lon;
                                     results.style.display = 'none';
@@ -345,8 +358,9 @@
                                 results.appendChild(div);
                             });
                             results.style.display = 'block';
-                        });
-                }, 300);
+                        })
+                        .catch(err => console.error("Autocomplete hiba:", err));
+                }, 200);
             });
 
             document.addEventListener('click', (e) => {
@@ -361,11 +375,16 @@
 
         // Keresés gomb eseménykezelő
         document.getElementById('search-btn').addEventListener('click', () => {
-            const fromVal = document.getElementById('from-input').value;
-            const toVal = document.getElementById('to-input').value;
+            const fromInput = document.getElementById('from-input');
+            const toInput = document.getElementById('to-input');
 
-            const fromCoords = cityCoords[fromVal] || [46.5455, 24.5625];
-            const toCoords = cityCoords[toVal] || [46.7712, 23.6236];
+            const fromCoords = (fromInput.dataset.lat && fromInput.dataset.lon) 
+                ? [parseFloat(fromInput.dataset.lat), parseFloat(fromInput.dataset.lon)] 
+                : (cityCoords[fromInput.value] || [46.5455, 24.5625]);
+
+            const toCoords = (toInput.dataset.lat && toInput.dataset.lon) 
+                ? [parseFloat(toInput.dataset.lat), parseFloat(toInput.dataset.lon)] 
+                : (cityCoords[toInput.value] || [46.7712, 23.6236]);
 
             updateMapRoute(fromCoords, toCoords);
         });
