@@ -19,6 +19,36 @@ rides = [
         "fromLng": 24.5575,
         "toLat": 46.7712,
         "toLng": 23.6236
+    },
+    {
+        "id": 2,
+        "driver": "Eszter K.",
+        "rating": "5.0",
+        "from": "Brassó",
+        "to": "Sepsiszentgyörgy",
+        "price": "25 RON",
+        "seats": "3 szabad hely",
+        "startTime": "14:30",
+        "endTime": "15:15",
+        "fromLat": 45.6579,
+        "fromLng": 25.6012,
+        "toLat": 45.8636,
+        "toLng": 25.7878
+    },
+    {
+        "id": 3,
+        "driver": "Attila N.",
+        "rating": "4.8",
+        "from": "Székelyudvarhely",
+        "to": "Csíkszereda",
+        "price": "30 RON",
+        "seats": "1 szabad hely",
+        "startTime": "11:00",
+        "endTime": "12:00",
+        "fromLat": 46.3053,
+        "fromLng": 25.2936,
+        "toLat": 46.3606,
+        "toLng": 25.8016
     }
 ]
 
@@ -38,7 +68,9 @@ def get_coords(city_name):
 @app.route('/')
 def index():
     return render_template('index.html', rides=rides)
-
+@app.route('/reviews')
+def reviews():
+    return render_template('reviews.html')
 @app.route('/create-ride', methods=['GET', 'POST'])
 def create_ride():
     if request.method == 'POST':
