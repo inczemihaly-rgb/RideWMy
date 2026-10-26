@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIDEWMY - Erdélyi Telekocsi</title>
+    <title>RIDEWMY - Utak keresése</title>
     
-    <!-- Bootstrap 5 CSS (cdnjs CDN) -->
+    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         :root {
             --primary-purple: #635BFF;
             --primary-hover: #5046e5;
-            --bg-gray: #F3F4F6;
-            --card-radius: 12px;
+            --bg-gray: #EFEFEF;
+            --card-radius: 16px;
         }
 
         body {
@@ -35,9 +35,10 @@
         .btn-purple {
             background-color: var(--primary-purple);
             color: white;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: 600;
             border: none;
+            padding: 10px 18px;
             transition: all 0.2s;
         }
 
@@ -50,63 +51,229 @@
             background: #ffffff;
             border-radius: var(--card-radius);
             border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
         }
 
-        /* Autocomplete dropdown styling */
-        .autocomplete-wrapper {
+        .figma-input-wrapper {
+            background-color: #F3F4F6;
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             position: relative;
+        }
+
+        .figma-input-wrapper i {
+            color: var(--primary-purple);
+            font-size: 1rem;
+        }
+
+        .figma-input-wrapper input {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        .figma-input-wrapper input::placeholder {
+            color: #9CA3AF;
         }
 
         .autocomplete-results {
             position: absolute;
-            top: 100%;
+            top: 105%;
             left: 0;
             right: 0;
-            z-index: 1050;
             background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 1000;
+            max-height: 220px;
             overflow-y: auto;
             display: none;
-            margin-top: 4px;
+            padding: 4px 0;
         }
 
         .autocomplete-item {
-            padding: 10px 14px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
             cursor: pointer;
-            font-size: 0.9rem;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .autocomplete-item:last-child {
-            border-bottom: none;
+            color: #374151;
+            transition: background 0.15s;
         }
 
         .autocomplete-item:hover {
-            background-color: #f8f9fa;
+            background-color: #F3F4F6;
             color: var(--primary-purple);
+            font-weight: 600;
         }
 
-        #mini-map {
-            height: 180px;
+        /* Térkép konténer */
+        .map-wrapper {
+            height: 200px;
+            min-height: 180px;
+            max-height: 550px;
+            border-radius: var(--card-radius) var(--card-radius) 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
             width: 100%;
-            border-radius: var(--card-radius);
+            height: 100%;
             z-index: 1;
         }
 
-        .avatar-btn {
-            background-color: #ede9fe;
+        /* Teljes alsó szélen végighúzódó húzósáv */
+        .map-drag-handle {
+            height: 16px;
+            background-color: #F3F4F6;
+            border-top: 1px solid #E5E7EB;
+            border-radius: 0 0 var(--card-radius) var(--card-radius);
+            cursor: ns-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+
+        .map-drag-handle:hover, .map-drag-handle.dragging {
+            background-color: #EDE9FE;
+        }
+
+        .map-drag-handle-bar {
+            width: 36px;
+            height: 4px;
+            background-color: #D1D5DB;
+            border-radius: 2px;
+            transition: background-color 0.2s;
+        }
+
+        .map-drag-handle:hover .map-drag-handle-bar, 
+        .map-drag-handle.dragging .map-drag-handle-bar {
+            background-color: var(--primary-purple);
+        }
+
+        .avatar-circle {
+            background-color: #E5E7EB;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+        }
+
+        .user-pill {
+            background-color: #F3F4F6;
+            border-radius: 30px;
+            padding: 4px 14px 4px 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-avatar-tag {
+            background-color: #EDE9FE;
             color: var(--primary-purple);
             font-weight: 700;
-            width: 40px;
-            height: 40px;
+            font-size: 0.8rem;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .rating-badge {
+            background-color: #FFF8E7;
+            color: #1F2937;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+
+        .rating-badge i {
+            color: #F59E0B;
+        }
+
+        .badge-seats {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .btn-map-preview {
+            background-color: #F3F4F6;
+            color: #6B7280;
             border: none;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            font-weight: 500;
+        }
+
+        .btn-map-preview:hover {
+            background-color: #E5E7EB;
+        }
+
+        .map-hover-popup .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .route-option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #1F2937;
+            transition: all 0.15s;
+        }
+
+        .route-option-btn:hover {
+            background: #EDE9FE;
+            border-color: var(--primary-purple);
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+
+        .btn-toggle-expand {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: #ffffff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+
+        .btn-toggle-expand:hover {
+            background: #EDE9FE;
+            color: var(--primary-purple);
         }
     </style>
 </head>
@@ -114,21 +281,20 @@
 
     <!-- Header / Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
-        <div class="container">
-            <a class="navbar-brand brand-logo fs-3 text-dark" href="#">RIDEWMY</a>
+        <div class="container" style="max-width: 800px;">
+            <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
             
             <div class="d-flex align-items-center gap-3">
-                <a href="#" class="nav-link fw-medium d-none d-md-block fs-6">Utak keresése</a>
-                <a href="#" class="nav-link fw-medium d-none d-md-block fs-6">Hirdetés feladása</a>
+                <a href="/" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
+                <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
+                
                 <div class="dropdown">
-                    <button class="avatar-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        SZ
-                    </button>
+                    <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar-tag">SZ</div>
+                        <span class="fw-semibold small text-dark">Szilárd T.</span>
+                    </div>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
-                        <li><span class="dropdown-header fw-bold text-dark">Szilárd T.</span></li>
-                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profilom</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-journal-text me-2"></i>Foglalásaim</a></li>
                         <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
                     </ul>
                 </div>
@@ -136,376 +302,485 @@
         </div>
     </nav>
 
-    <!-- Fő tartalom konténer -->
-    <div class="container py-4" style="max-width: 820px;">
-
-        <!-- Értesítő üzenet sikeres foglaláskor -->
-        <div id="booking-alert" class="alert alert-success alert-dismissible fade show d-none" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <strong>Sikeres foglalási igény!</strong> Értesítettük a sofőrt, aki hamarosan megerősíti a jelentkezésedet.
-            <button type="button" class="btn-close" onclick="document.getElementById('booking-alert').classList.add('d-none')"></button>
-        </div>
-
-        <!-- 1. Kereső kártya -->
-        <div class="card card-custom p-4 mb-4">
-            <h2 class="font-bagel h3 mb-4">Hol szeretnél utazni?</h2>
+    <!-- Fő tartalom -->
+    <div class="container py-4" style="max-width: 800px;">
+        
+        <!-- Kereső kártya -->
+        <div class="card card-custom p-4 mb-3" style="overflow: visible;">
+            <h3 class="font-bagel text-center mb-4">Hol szeretnél utazni?</h3>
             
-            <form id="search-form" onsubmit="return false;">
-                <div class="row g-2 align-items-center">
-                    <!-- Honnan input autokiegészítéssel -->
-                    <div class="col-md-3 col-6 autocomplete-wrapper">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-geo-alt text-muted"></i></span>
-                            <input type="text" id="from-input" class="form-control bg-light border-0" placeholder="Honnan?" autocomplete="off" value="Marosvásárhely">
-                        </div>
+            <form id="search-form" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-geo-alt"></i>
+                        <input type="text" id="from-input" placeholder="Honnan?" autocomplete="off">
                         <div id="from-results" class="autocomplete-results"></div>
                     </div>
+                </div>
 
-                    <!-- Hová input autokiegészítéssel -->
-                    <div class="col-md-3 col-6 autocomplete-wrapper">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-geo-alt text-muted"></i></span>
-                            <input type="text" id="to-input" class="form-control bg-light border-0" placeholder="Hová?" autocomplete="off" value="Kolozsvár">
-                        </div>
+                <div class="col-md-3">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-geo-alt"></i>
+                        <input type="text" id="to-input" placeholder="Hová?" autocomplete="off">
                         <div id="to-results" class="autocomplete-results"></div>
                     </div>
+                </div>
 
-                    <!-- Dátum -->
-                    <div class="col-md-3 col-6">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-calendar-event text-muted"></i></span>
-                            <input type="date" class="form-control bg-light border-0" value="2026-10-26">
-                        </div>
+                <div class="col-md-2">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-calendar"></i>
+                        <input type="text" onfocus="(this.type='date')" onblur="(this.type='text')" id="date-input" placeholder="Dátum">
                     </div>
-
-                    <!-- Utasok -->
-                    <div class="col-md-3 col-6">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-people text-muted"></i></span>
-                            <select class="form-select bg-light border-0">
-                                <option value="1">1 utas</option>
-                                <option value="2">2 utas</option>
-                                <option value="3">3 utas</option>
-                            </select>
-                        </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-people"></i>
+                        <input type="text" placeholder="Utasok">
                     </div>
-
-                    <!-- Keresés gomb -->
-                    <div class="col-12 mt-3">
-                        <button type="button" id="search-btn" class="btn btn-purple w-100 py-2 fs-6">
-                            <i class="bi bi-search me-2"></i> Keresés
-                        </button>
-                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-purple w-100">
+                        <i class="bi bi-search me-1"></i> Keresés
+                    </button>
                 </div>
             </form>
         </div>
 
-        <!-- 2. Kompakt Kistérkép preview -->
-        <div class="card card-custom p-2 mb-4 overflow-hidden">
-            <div id="mini-map"></div>
+        <!-- Térkép Kártya -->
+        <div class="card card-custom p-0 mb-4 overflow-hidden">
+            <div id="map-wrapper" class="map-wrapper">
+                <button id="toggle-expand-btn" class="btn btn-toggle-expand">
+                    <i class="bi bi-arrows-angle-expand me-1"></i> Nézet nagyítása
+                </button>
+                <div id="map"></div>
+            </div>
+            <div id="map-drag-handle" class="map-drag-handle" title="Húzd a magasság módosításához">
+                <div class="map-drag-handle-bar"></div>
+            </div>
         </div>
 
-        <!-- 3. Találati lista -->
-        <div class="mb-3">
-            <h3 class="font-bagel h4 mb-3">Elérhető utak</h3>
+        <!-- Utak lista -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="font-bagel m-0">Elérhető utak</h4>
+            <button id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted d-none">
+                <i class="bi bi-x-circle me-1"></i> Szűrők törlése
+            </button>
+        </div>
 
-            <div class="d-flex flex-column gap-3">
-                <!-- 1. Kártya -->
-                <div class="card card-custom p-3" id="ride-card-1">
-                    <div class="row align-items-center g-3">
-                        <div class="col-md-3 col-12 d-flex align-items-center gap-3">
-                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 48px; height: 48px;">
-                                SZ
-                            </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold">Szilárd T.</h6>
-                                <small class="text-warning"><i class="bi bi-star-fill"></i> 4.9</small>
-                            </div>
-                        </div>
-                        <div class="col-md-5 col-12">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <i class="bi bi-clock text-muted"></i>
-                                <span class="fw-semibold">08:00</span>
-                                <span class="text-muted">→</span>
-                                <span class="fw-semibold">10:15</span>
-                            </div>
-                            <div class="text-muted small">
-                                <i class="bi bi-geo-alt me-1"></i>Marosvásárhely → Kolozsvár
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-12 d-flex justify-content-between align-items-center justify-content-md-end gap-3">
-                            <div class="text-end">
-                                <span class="badge bg-light text-dark mb-1"><span id="seats-1">2</span> szabad hely</span>
-                                <div class="fs-5 fw-bold text-dark">35 RON <small class="fs-6 text-muted font-normal">/ fő</small></div>
-                            </div>
-                            <button class="btn btn-purple px-4 py-2" onclick="openBookingModal('Szilárd T.', '4.9', 'Marosvásárhely → Kolozsvár', '08:00', 35, 2, 1)">Részletek</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. Kártya -->
-                <div class="card card-custom p-3" id="ride-card-2">
-                    <div class="row align-items-center g-3">
-                        <div class="col-md-3 col-12 d-flex align-items-center gap-3">
-                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 48px; height: 48px;">
-                                EK
-                            </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold">Eszter K.</h6>
-                                <small class="text-warning"><i class="bi bi-star-fill"></i> 4.9</small>
-                            </div>
-                        </div>
-                        <div class="col-md-5 col-12">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <i class="bi bi-clock text-muted"></i>
-                                <span class="fw-semibold">12:30</span>
-                                <span class="text-muted">→</span>
-                                <span class="fw-semibold">14:45</span>
-                            </div>
-                            <div class="text-muted small">
-                                <i class="bi bi-geo-alt me-1"></i>Marosvásárhely → Kolozsvár
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-12 d-flex justify-content-between align-items-center justify-content-md-end gap-3">
-                            <div class="text-end">
-                                <span class="badge bg-light text-dark mb-1"><span id="seats-2">3</span> szabad hely</span>
-                                <div class="fs-5 fw-bold text-dark">35 RON <small class="fs-6 text-muted font-normal">/ fő</small></div>
-                            </div>
-                            <button class="btn btn-purple px-4 py-2" onclick="openBookingModal('Eszter K.', '4.9', 'Marosvásárhely → Kolozsvár', '12:30', 35, 3, 2)">Részletek</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="rides-container" class="d-flex flex-column gap-3">
+            <!-- Dinamikus kártyák -->
         </div>
 
     </div>
 
-    <!-- #25 FOGLALÁSI MODÁL -->
-    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-bagel fs-4" id="bookingModalLabel">Utazás Részletei</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <!-- Sofőr infók -->
-                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3">
-                        <div class="avatar-btn fs-5" id="modal-avatar">SZ</div>
-                        <div>
-                            <h6 class="mb-0 fw-bold" id="modal-driver-name">Sofőr Neve</h6>
-                            <small class="text-warning"><i class="bi bi-star-fill"></i> <span id="modal-driver-rating">4.9</span></small>
-                        </div>
-                    </div>
-
-                    <!-- Útvonal és időpont -->
-                    <div class="mb-3">
-                        <div class="text-muted small">Útvonal:</div>
-                        <div class="fw-semibold fs-5" id="modal-route">Marosvásárhely → Kolozsvár</div>
-                        <div class="text-muted small mt-2">Indulás: <strong id="modal-time" class="text-dark">08:00</strong></div>
-                    </div>
-
-                    <hr class="my-3">
-
-                    <!-- Helyfoglalási beállítások -->
-                    <div class="row align-items-center g-3">
-                        <div class="col-6">
-                            <label for="seat-select" class="form-label small fw-medium text-muted">Foglalandó helyek:</label>
-                            <select id="seat-select" class="form-select bg-light border-0 fw-bold" onchange="calculateTotalPrice()">
-                                <option value="1">1 hely</option>
-                                <option value="2">2 hely</option>
-                            </select>
-                        </div>
-                        <div class="col-6 text-end">
-                            <div class="small text-muted">Összesen fizetendő:</div>
-                            <div class="fs-4 fw-bold text-dark"><span id="modal-total-price">35</span> RON</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0 p-4">
-                    <button type="button" class="btn btn-light w-100 py-2 fw-semibold mb-2" data-bs-dismiss="modal">Mégse</button>
-                    <button type="button" id="confirm-booking-btn" class="btn btn-purple w-100 py-2 fs-6">
-                        <i class="bi bi-check2-circle me-2"></i> Foglalás megerősítése
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap 5 & Leaflet JS (cdnjs CDN) -->
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Koordináták Erdély főbb városaihoz
-        const cityCoords = {
-            "Marosvásárhely": [46.5455, 24.5625],
-            "Kolozsvár": [46.7712, 23.6236],
-            "Brassó": [45.6580, 25.6012],
-            "Nagyszeben": [45.7983, 24.1256]
-        };
+        const popularCities = [
+            { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures", "targu-mures"] },
+            { name: "Kolozsvár", lat: 46.7712, lng: 23.6236, alt: ["kolozsvar", "cluj", "cluj-napoca"] },
+            { name: "Brassó", lat: 45.6579, lng: 25.6012, alt: ["brasso", "brasov"] },
+            { name: "Nagyszeben", lat: 45.7983, lng: 24.1256, alt: ["nagyszeben", "sibiu"] },
+            { name: "Sepsiszentgyörgy", lat: 45.8636, lng: 25.7878, alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
+            { name: "Székelyudvarhely", lat: 46.3053, lng: 25.2936, alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
+            { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] },
+            { name: "Gyergyószentmiklós", lat: 46.7231, lng: 25.5919, alt: ["gyergyoszentmiklos", "gheorgheni"] },
+            { name: "Kézdivásárhely", lat: 46.0000, lng: 26.1333, alt: ["kezdivasarhely", "targu secuiesc"] },
+            { name: "Nagyvárad", lat: 47.0522, lng: 21.9211, alt: ["nagyvarad", "oradea"] },
+            { name: "Arad", lat: 46.1866, lng: 21.3123, alt: ["arad"] },
+            { name: "Temesvár", lat: 45.7537, lng: 21.2257, alt: ["temesvar", "timisoara"] },
+            { name: "Bukarest", lat: 44.4323, lng: 26.1063, alt: ["bukarest", "bucuresti"] }
+        ];
 
-        // 1. Leaflet Térkép inicializálása
-        const map = L.map('mini-map', { zoomControl: false }).setView([46.6, 24.1], 8);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        let routeLayer = null;
-
-        function updateMapRoute(startCoords, endCoords) {
-            if (routeLayer) map.removeLayer(routeLayer);
-
-            const startMarker = L.circleMarker(startCoords, { radius: 7, color: '#635BFF', fillColor: '#635BFF', fillOpacity: 1 });
-            const endMarker = L.circleMarker(endCoords, { radius: 7, color: '#635BFF', fillColor: '#ffffff', fillOpacity: 1, weight: 3 });
-            const polyline = L.polyline([startCoords, endCoords], { color: '#635BFF', weight: 4, opacity: 0.8 });
-
-            routeLayer = L.featureGroup([startMarker, endMarker, polyline]).addTo(map);
-            map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        let rides = {{ rides | tojson if rides is defined else '[]' }};
+        if (!rides || rides.length === 0) {
+            rides = [
+                { id: 1, driver: "Szilárd T.", rating: "4.9", from: "Marosvásárhely", to: "Kolozsvár", price: "35 RON", seats: "2 szabad hely", startTime: "08:00", endTime: "10:15", fromLat: 46.5425, fromLng: 24.5575, toLat: 46.7712, toLng: 23.6236 },
+                { id: 2, driver: "Eszter K.", rating: "4.9", from: "Kolozsvár", to: "Marosvásárhely", price: "35 RON", seats: "2 szabad hely", startTime: "08:00", endTime: "10:15", fromLat: 46.7712, fromLng: 23.6236, toLat: 46.5425, toLng: 24.5575 },
+                { id: 3, driver: "Attila N.", rating: "4.9", from: "Marosvásárhely", to: "Brassó", price: "35 RON", seats: "2 szabad hely", startTime: "08:00", endTime: "10:15", fromLat: 46.5425, fromLng: 24.5575, toLat: 45.6579, toLng: 25.6012 }
+            ];
         }
 
-        updateMapRoute(cityCoords["Marosvásárhely"], cityCoords["Kolozsvár"]);
+        const map = L.map('map', { zoomControl: true }).setView([46.4, 24.8], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
 
-        // 2. OpenStreetMap Autocomplete (Romániára szűkítve)
-        function setupAutocomplete(inputId, resultsId) {
+        let activeCityMarkers = [];
+        let currentActiveRoute = [];
+
+        // Dinamikus méretezés és automatikus gombkezelés
+        const mapWrapper = document.getElementById('map-wrapper');
+        const dragHandle = document.getElementById('map-drag-handle');
+        const toggleExpandBtn = document.getElementById('toggle-expand-btn');
+
+        let isDragging = false;
+        let startY = 0;
+        let startHeight = 0;
+
+        function updateExpandButtonState(height) {
+            if (height >= 300) {
+                toggleExpandBtn.innerHTML = '<i class="bi bi-arrows-angle-contract me-1"></i> Nézet kicsinyítése';
+            } else {
+                toggleExpandBtn.innerHTML = '<i class="bi bi-arrows-angle-expand me-1"></i> Nézet nagyítása';
+            }
+        }
+
+        dragHandle.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startY = e.clientY;
+            startHeight = mapWrapper.offsetHeight;
+            dragHandle.classList.add('dragging');
+            document.body.style.cursor = 'ns-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            
+            const deltaY = e.clientY - startY;
+            let newHeight = startHeight + deltaY;
+
+            if (newHeight < 180) newHeight = 180;
+            if (newHeight > 550) newHeight = 550;
+
+            mapWrapper.style.height = `${newHeight}px`;
+            
+            updateExpandButtonState(newHeight);
+            map.invalidateSize();
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                dragHandle.classList.remove('dragging');
+                document.body.style.cursor = 'default';
+                map.invalidateSize();
+            }
+        });
+
+        toggleExpandBtn.addEventListener('click', function() {
+            const currentH = mapWrapper.offsetHeight;
+            let targetH = 200;
+
+            if (currentH < 300) {
+                targetH = 420;
+            } else {
+                targetH = 200;
+            }
+
+            mapWrapper.style.height = `${targetH}px`;
+            updateExpandButtonState(targetH);
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 200);
+        });
+
+        function normalizeText(text) {
+            return text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+        }
+
+        function clearMap() {
+            activeCityMarkers.forEach(m => map.removeLayer(m));
+            activeCityMarkers = [];
+            clearActiveRoute();
+        }
+
+        function clearActiveRoute() {
+            currentActiveRoute.forEach(el => map.removeLayer(el));
+            currentActiveRoute = [];
+        }
+
+        function fitMapBoundsSmart(group) {
+            map.fitBounds(group.getBounds(), { 
+                padding: [50, 50],
+                maxZoom: 9
+            });
+        }
+
+        function resetMapToDefault() {
+            clearActiveRoute();
+            activeCityMarkers.forEach(m => {
+                if (!map.hasLayer(m)) {
+                    m.addTo(map);
+                }
+            });
+
+            if (activeCityMarkers.length > 0) {
+                const group = L.featureGroup(activeCityMarkers);
+                fitMapBoundsSmart(group);
+            } else {
+                map.setView([46.4, 24.8], 7);
+            }
+        }
+
+        function renderRides(data) {
+            const container = document.getElementById('rides-container');
+            container.innerHTML = '';
+            clearMap();
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="card card-custom p-4 text-center text-muted">
+                        <i class="bi bi-emoji-frown fs-2 mb-2"></i>
+                        <p class="m-0">Sajnos nem található a keresésnek megfelelő út.</p>
+                    </div>`;
+                return;
+            }
+
+            const cityGroups = {};
+
+            data.forEach((ride) => {
+                const card = document.createElement('div');
+                card.className = 'card card-custom p-3';
+                card.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 150px;">
+                            <div class="avatar-circle"></div>
+                            <div>
+                                <div class="fw-bold text-dark small">${ride.driver}</div>
+                                <a href="/reviews" class="rating-badge mt-1">
+                                    <i class="bi bi-star"></i> ${ride.rating}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col px-4">
+                            <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
+                                <i class="bi bi-clock"></i>
+                                <span>${ride.startTime} &rarr; ${ride.endTime}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2 fw-medium text-dark small">
+                                <i class="bi bi-geo-alt text-muted"></i>
+                                <span>${ride.from} &rarr; ${ride.to}</span>
+                            </div>
+                            <div>
+                                <button class="btn btn-map-preview btn-preview-action">
+                                    <i class="bi bi-geo-alt-fill text-primary me-1"></i> Térkép megtekintése
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-auto text-end">
+                            <span class="badge badge-seats mb-2 d-inline-block">${ride.seats}</span>
+                            <div class="fs-5 fw-bold text-dark mb-2">${ride.price} <span class="fs-6 fw-normal text-muted">/ fő</span></div>
+                            <a href="#" class="btn btn-purple px-4 py-2 text-decoration-none fs-6">Részletek</a>
+                        </div>
+                    </div>`;
+
+                container.appendChild(card);
+
+                // Közvetlenül a backend által átadott koordinátákat használjuk!
+                const fLat = ride.fromLat;
+                const fLng = ride.fromLng;
+                const tLat = ride.toLat;
+                const tLng = ride.toLng;
+
+                if (fLat && fLng) {
+                    const rideInfo = {
+                        driver: ride.driver,
+                        from: ride.from,
+                        to: ride.to,
+                        fLat, fLng, tLat, tLng
+                    };
+
+                    if (!cityGroups[ride.from]) {
+                        cityGroups[ride.from] = {
+                            lat: fLat,
+                            lng: fLng,
+                            cityName: ride.from,
+                            rides: []
+                        };
+                    }
+                    cityGroups[ride.from].rides.push(rideInfo);
+                }
+
+                card.querySelector('.btn-preview-action').addEventListener('click', () => {
+                    if (fLat && fLng && tLat && tLng) {
+                        focusRideRoute(fLat, fLng, tLat, tLng, ride.from, ride.to);
+                    }
+                });
+            });
+
+            Object.keys(cityGroups).forEach(cityName => {
+                const group = cityGroups[cityName];
+                const marker = L.marker([group.lat, group.lng]).addTo(map);
+
+                let popupContent = `<div style="min-width:140px;">
+                    <div style="font-weight:700; border-bottom:1px solid #E5E7EB; padding-bottom:4px; margin-bottom:4px; color:#1F2937;">
+                        <i class="bi bi-geo-alt-fill text-primary"></i> ${group.cityName}
+                    </div>
+                    <div style="font-size:0.75rem; color:#6B7280; margin-bottom:4px;">Elérhető úticélok:</div>`;
+
+                group.rides.forEach((r) => {
+                    popupContent += `
+                        <button class="route-option-btn" onclick="selectRouteFromPopup('${r.fLat}', '${r.fLng}', '${r.tLat}', '${r.tLng}', '${r.from}', '${r.to}')">
+                            &rarr; <strong>${r.to}</strong> <span style="color:#6B7280;">(${r.driver})</span>
+                        </button>`;
+                });
+
+                popupContent += `</div>`;
+
+                const popup = L.popup({
+                    className: 'map-hover-popup',
+                    closeButton: false,
+                    offset: [0, -20]
+                }).setContent(popupContent);
+
+                marker.on('mouseover', function() {
+                    this.bindPopup(popup).openPopup();
+                });
+
+                activeCityMarkers.push(marker);
+            });
+
+            if (activeCityMarkers.length > 0) {
+                const group = L.featureGroup(activeCityMarkers);
+                fitMapBoundsSmart(group);
+            }
+        }
+
+        window.selectRouteFromPopup = function(fLat, fLng, tLat, tLng, fromName, toName) {
+            focusRideRoute(parseFloat(fLat), parseFloat(fLng), parseFloat(tLat), parseFloat(tLng), fromName, toName);
+        };
+
+        function focusRideRoute(fLat, fLng, tLat, tLng, fromName, toName) {
+            clearActiveRoute();
+
+            activeCityMarkers.forEach(m => map.removeLayer(m));
+
+            const startMarker = L.marker([fLat, fLng]).addTo(map);
+
+            const polyline = L.polyline([[fLat, fLng], [tLat, tLng]], {
+                color: '#635BFF',
+                weight: 4,
+                dashArray: '6, 8'
+            }).addTo(map);
+
+            const endMarker = L.marker([tLat, tLng]).addTo(map);
+            const popup = L.popup({ closeOnClick: false })
+                .setContent(`<b>${toName}</b> (Érkezés)`);
+            
+            endMarker.bindPopup(popup).openPopup();
+
+            map.once('popupclose', function() {
+                resetMapToDefault();
+            });
+
+            currentActiveRoute.push(startMarker, polyline, endMarker);
+
+            map.fitBounds(polyline.getBounds(), {
+                padding: [50, 50],
+                maxZoom: 9
+            });
+        }
+
+        renderRides(rides);
+
+        function setupFastAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);
-            const results = document.getElementById(resultsId);
-            let timeout = null;
+            const resultsDiv = document.getElementById(resultsId);
+            let apiTimeout = null;
 
             input.addEventListener('input', function() {
-                clearTimeout(timeout);
-                const query = this.value.trim();
+                clearTimeout(apiTimeout);
+                const queryRaw = this.value.trim();
+                const queryNorm = normalizeText(queryRaw);
 
-                if (query.length < 2) {
-                    results.style.display = 'none';
+                if (queryNorm.length < 1) {
+                    resultsDiv.style.display = 'none';
                     return;
                 }
 
-                timeout = setTimeout(() => {
-                    const apiUrl = `https://nominatim.openstreetmap.org/search?format=json` +
-                        `&q=${encodeURIComponent(query)}` +
-                        `&countrycodes=ro` +
-                        `&limit=5` +
-                        `&accept-language=hu,ro`;
+                const localMatches = popularCities.filter(c => {
+                    const nameNorm = normalizeText(c.name);
+                    const matchName = nameNorm.includes(queryNorm);
+                    const matchAlt = c.alt.some(a => normalizeText(a).includes(queryNorm));
+                    return matchName || matchAlt;
+                });
 
-                    fetch(apiUrl)
-                        .then(res => res.json())
-                        .then(data => {
-                            results.innerHTML = '';
-                            if (!data || data.length === 0) {
-                                results.style.display = 'none';
-                                return;
-                            }
+                resultsDiv.innerHTML = '';
 
-                            data.forEach(item => {
-                                const div = document.createElement('div');
-                                div.className = 'autocomplete-item';
-                                const parts = item.display_name.split(',');
-                                const cityName = parts[0].trim();
-                                const county = parts[1] ? parts[1].trim() : '';
-                                
-                                div.innerText = county ? `${cityName} (${county})` : cityName;
-                                
-                                div.addEventListener('click', () => {
-                                    input.value = cityName;
-                                    input.dataset.lat = item.lat;
-                                    input.dataset.lon = item.lon;
-                                    results.style.display = 'none';
+                localMatches.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'autocomplete-item';
+                    itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-primary"></i><strong>${item.name}</strong>`;
+                    itemDiv.addEventListener('click', function() {
+                        input.value = item.name;
+                        resultsDiv.style.display = 'none';
+                    });
+                    resultsDiv.appendChild(itemDiv);
+                });
+
+                if (localMatches.length > 0) {
+                    resultsDiv.style.display = 'block';
+                }
+
+                if (queryNorm.length >= 3) {
+                    apiTimeout = setTimeout(() => {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&addressdetails=1&limit=5`)
+                            .then(res => res.json())
+                            .then(data => {
+                                data.forEach(apiItem => {
+                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.village || apiItem.name;
+                                    const alreadyListed = localMatches.some(m => normalizeText(m.name) === normalizeText(cityName));
+                                    if (!alreadyListed && cityName) {
+                                        const itemDiv = document.createElement('div');
+                                        itemDiv.className = 'autocomplete-item';
+                                        itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-muted"></i><strong>${cityName}</strong>`;
+                                        itemDiv.addEventListener('click', function() {
+                                            input.value = cityName;
+                                            resultsDiv.style.display = 'none';
+                                        });
+                                        resultsDiv.appendChild(itemDiv);
+                                    }
                                 });
-                                results.appendChild(div);
-                            });
-                            results.style.display = 'block';
-                        })
-                        .catch(err => console.error("Autocomplete hiba:", err));
-                }, 200);
+                                if (resultsDiv.children.length > 0) {
+                                    resultsDiv.style.display = 'block';
+                                }
+                            })
+                            .catch(() => {});
+                    }, 200);
+                }
             });
 
-            document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !results.contains(e.target)) {
-                    results.style.display = 'none';
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
                 }
             });
         }
 
-        setupAutocomplete('from-input', 'from-results');
-        setupAutocomplete('to-input', 'to-results');
+        setupFastAutocomplete('from-input', 'from-results');
+        setupFastAutocomplete('to-input', 'to-results');
 
-        document.getElementById('search-btn').addEventListener('click', () => {
-            const fromInput = document.getElementById('from-input');
-            const toInput = document.getElementById('to-input');
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fromVal = normalizeText(document.getElementById('from-input').value);
+            const toVal = normalizeText(document.getElementById('to-input').value);
 
-            const fromCoords = (fromInput.dataset.lat && fromInput.dataset.lon) 
-                ? [parseFloat(fromInput.dataset.lat), parseFloat(fromInput.dataset.lon)] 
-                : (cityCoords[fromInput.value] || [46.5455, 24.5625]);
+            const filtered = rides.filter(ride => {
+                const rideFromNorm = normalizeText(ride.from);
+                const rideToNorm = normalizeText(ride.to);
 
-            const toCoords = (toInput.dataset.lat && toInput.dataset.lon) 
-                ? [parseFloat(toInput.dataset.lat), parseFloat(toInput.dataset.lon)] 
-                : (cityCoords[toInput.value] || [46.7712, 23.6236]);
+                const matchFrom = !fromVal || rideFromNorm.includes(fromVal);
+                const matchTo = !toVal || rideToNorm.includes(toVal);
+                return matchFrom && matchTo;
+            });
 
-            updateMapRoute(fromCoords, toCoords);
+            renderRides(filtered);
+            document.getElementById('reset-btn').classList.remove('d-none');
         });
 
-        // 3. Foglalási logika (Modál feltöltése & dinamikus árszámítás)
-        let currentPricePerSeat = 35;
-        let activeRideId = null;
-
-        function openBookingModal(driverName, rating, route, time, price, availableSeats, rideId) {
-            activeRideId = rideId;
-            currentPricePerSeat = price;
-
-            document.getElementById('modal-driver-name').innerText = driverName;
-            document.getElementById('modal-driver-rating').innerText = rating;
-            document.getElementById('modal-avatar').innerText = driverName.split(' ').map(n => n[0]).join('');
-            document.getElementById('modal-route').innerText = route;
-            document.getElementById('modal-time').innerText = time;
-
-            // Szabad helyek feltöltése
-            const seatSelect = document.getElementById('seat-select');
-            seatSelect.innerHTML = '';
-            for (let i = 1; i <= availableSeats; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.innerText = `${i} hely`;
-                seatSelect.appendChild(opt);
-            }
-
-            calculateTotalPrice();
-
-            const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
-            modal.show();
-        }
-
-        function calculateTotalPrice() {
-            const seats = parseInt(document.getElementById('seat-select').value);
-            document.getElementById('modal-total-price').innerText = seats * currentPricePerSeat;
-        }
-
-        document.getElementById('confirm-booking-btn').addEventListener('click', () => {
-            const bookedSeats = parseInt(document.getElementById('seat-select').value);
-            const seatsElem = document.getElementById(`seats-${activeRideId}`);
-            
-            if (seatsElem) {
-                let currentSeats = parseInt(seatsElem.innerText);
-                let newSeats = currentSeats - bookedSeats;
-                seatsElem.innerText = newSeats;
-
-                if (newSeats <= 0) {
-                    const card = document.getElementById(`ride-card-${activeRideId}`);
-                    const btn = card.querySelector('button');
-                    btn.disabled = true;
-                    btn.innerText = "Betelt";
-                    btn.classList.replace('btn-purple', 'btn-secondary');
-                }
-            }
-
-            // Modál bezárása & sikeres alert megjelenítése
-            const modalElem = document.getElementById('bookingModal');
-            const modal = bootstrap.Modal.getInstance(modalElem);
-            modal.hide();
-
-            const alertElem = document.getElementById('booking-alert');
-            alertElem.classList.remove('d-none');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            document.getElementById('from-input').value = '';
+            document.getElementById('to-input').value = '';
+            document.getElementById('date-input').value = '';
+            this.classList.add('d-none');
+            renderRides(rides);
         });
     </script>
 </body>
