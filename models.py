@@ -57,6 +57,13 @@ class Booking(db.Model):
     seats_bookd = db.Column(db.Integer)
     booking_status = db.Column(db.Boolean, default=True)
     creatid_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+
+    #Sajat boolean lekezelese a booking_status mezore
+    def get_status_text(self):
+        if self.booking_status:
+            return "Aktív foglalás"
+        else:
+            return "Törölt / Inaktív"
     
     reviews = db.relationship('Review', backref='booking', cascade='all, delete-orphan')
 
