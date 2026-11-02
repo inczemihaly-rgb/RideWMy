@@ -1,106 +1,42 @@
-import requests
 from flask import Flask, render_template, request, redirect, url_for
+from models import db, User, Car, Trip, Booking, Review
 
 app = Flask(__name__)
 
-# Memóriabeli adattároló (később SQL adatbázis)
-rides = [
-    {
-        "id": 1,
-        "driver": "Szilárd T.",
-        "rating": "4.9",
-        "from": "Marosvásárhely",
-        "to": "Kolozsvár",
-        "price": "35 RON",
-        "seats": "2 szabad hely",
-        "startTime": "08:00",
-        "endTime": "10:15",
-        "fromLat": 46.5425,
-        "fromLng": 24.5575,
-        "toLat": 46.7712,
-        "toLng": 23.6236
-    },
-    {
-        "id": 2,
-        "driver": "Eszter K.",
-        "rating": "5.0",
-        "from": "Brassó",
-        "to": "Sepsiszentgyörgy",
-        "price": "25 RON",
-        "seats": "3 szabad hely",
-        "startTime": "14:30",
-        "endTime": "15:15",
-        "fromLat": 45.6579,
-        "fromLng": 25.6012,
-        "toLat": 45.8636,
-        "toLng": 25.7878
-    },
-    {
-        "id": 3,
-        "driver": "Attila N.",
-        "rating": "4.8",
-        "from": "Székelyudvarhely",
-        "to": "Csíkszereda",
-        "price": "30 RON",
-        "seats": "1 szabad hely",
-        "startTime": "11:00",
-        "endTime": "12:00",
-        "fromLat": 46.3053,
-        "fromLng": 25.2936,
-        "toLat": 46.3606,
-        "toLng": 25.8016
-    }
-]
+# XAMPP MySQL kapcsolódás (root user, jelszó nélkül, localhost, ridewmy adatbázis)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/ridewmy'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def get_coords(city_name):
-    """Automatikusan lekéri a város koordinátáit az OpenStreetMap Nominatim API-ból"""
-    try:
-        url = f"https://nominatim.openstreetmap.org/search?format=json&q={city_name}&countrycodes=ro&limit=1"
-        headers = {'User-Agent': 'RIDEWMY-App'}
-        response = requests.get(url, headers=headers, timeout=3)
-        data = response.json()
-        if data:
-            return float(data[0]['lat']), float(data[0]['lon'])
-    except Exception as e:
-        print(f"Hiba a koordináta lekérésekor ({city_name}):", e)
-    return None, None
+# SQLAlchemy inicializálása
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def index():
-    return render_template('index.html', rides=rides)
-@app.route('/reviews')
-def reviews():
-    return render_template('reviews.html')
-@app.route('/create-ride', methods=['GET', 'POST'])
-def create_ride():
-    if request.method == 'POST':
-        from_city = request.form.get('from')
-        to_city = request.form.get('to')
-        
-        # Automatikus koordináta lekérés a megadott városokhoz
-        from_lat, from_lng = get_coords(from_city)
-        to_lat, to_lng = get_coords(to_city)
-
-        new_ride = {
-            "id": len(rides) + 1,
-            "driver": request.form.get('driver', 'Új Felhasználó'),
+    # Lekérjük az adatbázisban lévő összes utat
+    trips_from_db = Trip.query.all()
+    
+    rides_data = []
+    for trip in trips_from_db:
+        rides_data.append({
+            "id": trip.trip_id,
+            "driver": trip.driver.full_name if trip.driver else "Ismeretlen",
             "rating": "5.0",
-            "from": from_city,
-            "to": to_city,
-            "price": f"{request.form.get('price', '30')} RON",
-            "seats": f"{request.form.get('seats', '3')} szabad hely",
-            "startTime": request.form.get('startTime', '09:00'),
-            "endTime": request.form.get('endTime', '11:00'),
-            "fromLat": from_lat,
-            "fromLng": from_lng,
-            "toLat": to_lat,
-            "toLng": to_lng
-        }
-        
-        rides.append(new_ride)
-        return redirect(url_for('index'))
-        
-    return render_template('create_ride.html')
+            "from": "Kiindulás",
+            "to": "Úticél",
+            "fromLat": float(trip.start_latitude) if trip.start_latitude else None,
+            "fromLng": float(trip.start_longitude) if trip.start_longitude else None,
+            "toLat": float(trip.destination_latitude) if trip.destination_latitude else None,
+            "toLng": float(trip.destination_longitude) if trip.destination_longitude else None,
+            "price": f"{trip.price_per_seat} RON",
+            "seats": f"{trip.available_seats} szabad hely",
+            "startTime": trip.departure_time.strftime('%H:%M') if trip.departure_time else "08:00",
+            "endTime": trip.estimated_arival_time.strftime('%H:%M') if trip.estimated_arival_time else "10:00"
+        })
+
+    return render_template('index.html', rides=rides_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
