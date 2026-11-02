@@ -129,7 +129,9 @@
             <h2 class="font-bagel display-6 fw-bold mb-1">Értékelés írása</h2>
             <p class="text-muted small mb-4">Milyen volt a közös utazásod <strong>Szilárd T.</strong> sofőrrel?</p>
 
-            <form action="/" method="GET">
+            <form action="/reviews" method="POST">
+                <input type="hidden" name="booking_id" value="1">
+
                 <div class="rating-stars d-flex justify-content-center gap-2 mb-4" id="star-container">
                     <i class="bi bi-star-fill active" data-value="1"></i>
                     <i class="bi bi-star-fill active" data-value="2"></i>
@@ -142,7 +144,7 @@
 
                 <div class="mb-4 text-start">
                     <label class="form-label small fw-medium text-secondary">Megjegyzés (opcionális)</label>
-                    <textarea class="form-control form-control-custom" rows="4" placeholder="Oszd meg a tapasztalataidat a többi utassal..."></textarea>
+                    <textarea name="comment" class="form-control form-control-custom" rows="4" placeholder="Oszd meg a tapasztalataidat a többi utassal..."></textarea>
                 </div>
 
                 <button type="submit" class="btn btn-purple w-100 fs-6">

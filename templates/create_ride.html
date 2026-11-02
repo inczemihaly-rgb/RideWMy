@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RIDEWMY - Út meghirdetése</title>
     
-    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/hu.js"></script>
+
     <style>
         :root {
             --primary-purple: #635BFF;
@@ -59,11 +61,8 @@
             border-radius: 10px;
             padding: 10px 14px;
             font-size: 0.95rem;
-        }
-
-        .form-control-custom:focus, .form-select-custom:focus {
-            background-color: #E5E7EB;
-            box-shadow: none;
+            outline: none !important;
+            box-shadow: none !important;
         }
 
         .user-pill {
@@ -109,13 +108,47 @@
             font-size: 0.85rem;
             cursor: pointer;
             color: #374151;
-            transition: background 0.15s;
         }
 
         .autocomplete-item:hover {
             background-color: #F3F4F6;
             color: var(--primary-purple);
             font-weight: 600;
+        }
+
+        .preview-map-wrapper {
+            height: 190px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            border: 1px solid #E5E7EB;
+        }
+
+        #create-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .route-live-badge {
+            background-color: #EDE9FE;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: #4C1D95;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .new-car-box {
+            background: #F9FAFB;
+            border: 1px dashed #D1D5DB;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
         }
     </style>
 </head>
@@ -154,6 +187,42 @@
             </div>
 
             <form action="/create-ride" method="POST">
+                <!-- Jármű kiválasztása vagy új beírása -->
+                <div class="mb-3">
+                    <label class="form-label small fw-medium text-secondary">Jármű kiválasztása</label>
+                    <select id="car-select" name="car_id" class="form-select form-select-custom" required>
+                        {% if cars %}
+                            {% for car in cars %}
+                                <option value="{{ car.car_id }}">
+                                    🚘 {{ car.brand }} {{ car.model }} ({{ car.color }}) — {{ car.plate_num }}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="1">Volkswagen Golf 7 (MS10RDE)</option>
+                        {% endif %}
+                        <option value="new" class="fw-bold text-primary">➕ Másik / Új autó megadása...</option>
+                    </select>
+                </div>
+
+                <!-- Új autó manuális beviteli mezői -->
+                <div id="new-car-fields" class="new-car-box d-none">
+                    <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-plus-circle-fill text-primary me-1"></i> Új autó adatai</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" name="new_brand" class="form-control form-control-custom" placeholder="Márka (pl. Audi)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_model" class="form-control form-control-custom" placeholder="Modell (pl. A4)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_color" class="form-control form-control-custom" placeholder="Szín (pl. Fehér)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_plate_num" class="form-control form-control-custom" placeholder="Rendszám (pl. HR05XYZ)">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Honnan mező -->
                 <div class="mb-3 position-relative">
                     <label class="form-label small fw-medium text-secondary">Honnan?</label>
@@ -168,9 +237,22 @@
                     <div id="to-results" class="autocomplete-results"></div>
                 </div>
 
+                <!-- Interaktív Térkép Előnézet -->
+                <div class="preview-map-wrapper">
+                    <div id="create-map"></div>
+                </div>
+
+                <!-- Élő Útvonal Infósáv -->
+                <div id="route-live-info" class="route-live-badge d-none">
+                    <div><i class="bi bi-clock-history me-1"></i> Menetidő: <strong id="info-duration">-</strong></div>
+                    <div><i class="bi bi-signpost-split me-1"></i> Távolság: <strong id="info-distance">-</strong></div>
+                    <div><i class="bi bi-flag me-1"></i> Érkezés: <strong id="info-arrival">-</strong></div>
+                </div>
+
+                <!-- Dátum és idő mező -->
                 <div class="mb-3">
                     <label class="form-label small fw-medium text-secondary">Dátum és idő</label>
-                    <input type="datetime-local" name="datetime" class="form-control form-control-custom" value="2026-10-25T08:00" required>
+                    <input type="text" id="datetime-picker" name="datetime" class="form-control form-control-custom bg-white" placeholder="Válassz dátumot és időpontot..." required readonly>
                 </div>
 
                 <div class="row g-3 mb-4">
@@ -178,9 +260,9 @@
                         <label class="form-label small fw-medium text-secondary">Szabad helyek száma</label>
                         <select name="seats" class="form-select form-select-custom">
                             <option value="1">1 hely</option>
-                            <option value="2" selected>2 hely</option>
+                            <option value="2">2 hely</option>
                             <option value="3">3 hely</option>
-                            <option value="4">4 hely</option>
+                            <option value="4" selected>4 hely</option>
                         </select>
                     </div>
                     <div class="col-6">
@@ -203,11 +285,137 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Új autó mezők megjelenítése / elrejtése
+        const carSelect = document.getElementById('car-select');
+        const newCarFields = document.getElementById('new-car-fields');
+
+        carSelect.addEventListener('change', function() {
+            if (this.value === 'new') {
+                newCarFields.classList.remove('d-none');
+            } else {
+                newCarFields.classList.add('d-none');
+            }
+        });
+
+        let calculatedDurationMinutes = 0;
+
+        const datePicker = flatpickr("#datetime-picker", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            locale: "hu",
+            defaultHour: 10,
+            defaultMinute: 0,
+            minuteIncrement: 15,
+            onChange: function(selectedDates) {
+                updateArrivalDisplay(selectedDates[0]);
+            }
+        });
+
+        const createMap = L.map('create-map', { zoomControl: false }).setView([46.4, 24.8], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(createMap);
+
+        let fromMarker = null;
+        let toMarker = null;
+        let routeLayer = null;
+
+        function formatDuration(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hrs > 0) {
+                return mins > 0 ? `${hrs} óra ${mins} perc` : `${hrs} óra`;
+            }
+            return `${mins} perc`;
+        }
+
+        function updateArrivalDisplay(selectedDate) {
+            if (!selectedDate || calculatedDurationMinutes <= 0) return;
+            const arrivalDate = new Date(selectedDate.getTime() + calculatedDurationMinutes * 60000);
+            const hours = String(arrivalDate.getHours()).padStart(2, '0');
+            const minutes = String(arrivalDate.getMinutes()).padStart(2, '0');
+            document.getElementById('info-arrival').innerText = `${hours}:${minutes}`;
+        }
+
+        function updateMapPreview() {
+            const fromVal = document.getElementById('from-input').value.trim();
+            const toVal = document.getElementById('to-input').value.trim();
+
+            if (!fromVal && !toVal) return;
+
+            const promises = [];
+            if (fromVal) promises.push(fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fromVal)}&countrycodes=ro&accept-language=hu,ro&limit=1`).then(r=>r.json()));
+            else promises.push(Promise.resolve([]));
+
+            if (toVal) promises.push(fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(toVal)}&countrycodes=ro&accept-language=hu,ro&limit=1`).then(r=>r.json()));
+            else promises.push(Promise.resolve([]));
+
+            Promise.all(promises).then(([fromData, toData]) => {
+                if (fromMarker) createMap.removeLayer(fromMarker);
+                if (toMarker) createMap.removeLayer(toMarker);
+                if (routeLayer) createMap.removeLayer(routeLayer);
+
+                let fromCoords = null;
+                let toCoords = null;
+
+                if (fromData && fromData.length > 0) {
+                    fromCoords = [parseFloat(fromData[0].lat), parseFloat(fromData[0].lon)];
+                    fromMarker = L.marker(fromCoords).addTo(createMap).bindPopup(`<b>Indulás:</b> ${fromVal}`);
+                }
+
+                if (toData && toData.length > 0) {
+                    toCoords = [parseFloat(toData[0].lat), parseFloat(toData[0].lon)];
+                    toMarker = L.marker(toCoords).addTo(createMap).bindPopup(`<b>Érkezés:</b> ${toVal}`);
+                }
+
+                if (fromCoords && toCoords) {
+                    fetch(`http://router.project-osrm.org/route/v1/driving/${fromCoords[1]},${fromCoords[0]};${toCoords[1]},${toCoords[0]}?overview=full&geometries=geojson`)
+                        .then(res => res.json())
+                        .then(osrmData => {
+                            if (osrmData.routes && osrmData.routes.length > 0) {
+                                const route = osrmData.routes[0];
+                                calculatedDurationMinutes = Math.round(route.duration / 60);
+                                const distKm = Math.round(route.distance / 1000);
+
+                                document.getElementById('info-duration').innerText = formatDuration(calculatedDurationMinutes);
+                                document.getElementById('info-distance').innerText = `${distKm} km`;
+                                document.getElementById('route-live-info').classList.remove('d-none');
+
+                                if (datePicker.selectedDates.length > 0) {
+                                    updateArrivalDisplay(datePicker.selectedDates[0]);
+                                }
+
+                                routeLayer = L.geoJSON(route.geometry, {
+                                    style: { color: '#635BFF', weight: 4, opacity: 0.8 }
+                                }).addTo(createMap);
+
+                                createMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+                            }
+                        })
+                        .catch(() => {
+                            routeLayer = L.polyline([fromCoords, toCoords], { color: '#635BFF', weight: 4, dashArray: '6, 8' }).addTo(createMap);
+                            createMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+                        });
+                } else if (fromCoords) {
+                    createMap.setView(fromCoords, 9);
+                } else if (toCoords) {
+                    createMap.setView(toCoords, 9);
+                }
+            }).catch(()=>{});
+        }
+
         const popularCities = [
-            { name: "Marosvásárhely", alt: ["marosvasarhely", "targu mures", "targu-mures"] },
-            { name: "Kolozsvár", alt: ["kolozsvar", "cluj", "cluj-napoca"] },
+            { name: "Hátszeg", alt: ["hatszeg", "hateg"] },
+            { name: "Horezu", alt: ["horezu"] },
+            { name: "Barót", alt: ["barot", "baraolt"] },
+            { name: "Farkaslaka", alt: ["farkaslaka", "lupeni"] },
+            { name: "Marosvásárhely", alt: ["marosvasarhely", "targu mures"] },
+            { name: "Kolozsvár", alt: ["kolozsvar", "cluj"] },
             { name: "Brassó", alt: ["brasso", "brasov"] },
             { name: "Nagyszeben", alt: ["nagyszeben", "sibiu"] },
             { name: "Sepsiszentgyörgy", alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
@@ -222,7 +430,21 @@
         ];
 
         function normalizeText(text) {
-            return text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+            if (!text) return "";
+            return text
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/ț/g, "t").replace(/Ț/g, "t")
+                .replace(/ș/g, "s").replace(/Ș/g, "s")
+                .replace(/ă/g, "a").replace(/Ă/g, "a")
+                .replace(/î/g, "i").replace(/Î/g, "i")
+                .replace(/â/g, "a").replace(/Â/g, "a")
+                .toLowerCase()
+                .trim();
+        }
+
+        function isCyrillic(str) {
+            return /[\u0400-\u04FF]/.test(str);
         }
 
         function setupFastAutocomplete(inputId, resultsId) {
@@ -237,25 +459,29 @@
 
                 if (queryNorm.length < 1) {
                     resultsDiv.style.display = 'none';
+                    resultsDiv.innerHTML = '';
                     return;
                 }
 
                 const localMatches = popularCities.filter(c => {
                     const nameNorm = normalizeText(c.name);
                     const matchName = nameNorm.includes(queryNorm);
-                    const matchAlt = c.alt.some(a => normalizeText(a).includes(queryNorm));
+                    const matchAlt = c.alt ? c.alt.some(a => normalizeText(a).includes(queryNorm)) : false;
                     return matchName || matchAlt;
                 });
 
+                const addedNames = new Set();
                 resultsDiv.innerHTML = '';
 
                 localMatches.forEach(item => {
+                    addedNames.add(normalizeText(item.name));
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'autocomplete-item';
                     itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-primary"></i><strong>${item.name}</strong>`;
                     itemDiv.addEventListener('click', function() {
                         input.value = item.name;
                         resultsDiv.style.display = 'none';
+                        updateMapPreview();
                     });
                     resultsDiv.appendChild(itemDiv);
                 });
@@ -266,31 +492,39 @@
 
                 if (queryNorm.length >= 3) {
                     apiTimeout = setTimeout(() => {
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&addressdetails=1&limit=5`)
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&accept-language=hu,ro&addressdetails=1&limit=8`)
                             .then(res => res.json())
                             .then(data => {
                                 data.forEach(apiItem => {
-                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.village || apiItem.name;
-                                    const alreadyListed = localMatches.some(m => normalizeText(m.name) === normalizeText(cityName));
-                                    if (!alreadyListed && cityName) {
+                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.municipality || apiItem.address.village || apiItem.name;
+                                    if (!cityName || isCyrillic(cityName)) return;
+
+                                    const cityNorm = normalizeText(cityName);
+                                    if (!addedNames.has(cityNorm)) {
+                                        addedNames.add(cityNorm);
+
                                         const itemDiv = document.createElement('div');
                                         itemDiv.className = 'autocomplete-item';
                                         itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-muted"></i><strong>${cityName}</strong>`;
                                         itemDiv.addEventListener('click', function() {
                                             input.value = cityName;
                                             resultsDiv.style.display = 'none';
+                                            updateMapPreview();
                                         });
                                         resultsDiv.appendChild(itemDiv);
                                     }
                                 });
+
                                 if (resultsDiv.children.length > 0) {
                                     resultsDiv.style.display = 'block';
                                 }
                             })
                             .catch(() => {});
-                    }, 200);
+                    }, 150);
                 }
             });
+
+            input.addEventListener('change', updateMapPreview);
 
             document.addEventListener('click', function(e) {
                 if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {

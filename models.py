@@ -58,22 +58,18 @@ class Booking(db.Model):
     booking_status = db.Column(db.Boolean, default=True)
     creatid_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
 
-    #Sajat boolean lekezelese a booking_status mezore
     def get_status_text(self):
-        if self.booking_status:
-            return "Aktív foglalás"
-        else:
-            return "Törölt / Inaktív"
+        return "Aktív foglalás" if self.booking_status else "Törölt / Inaktív"
     
     reviews = db.relationship('Review', backref='booking', cascade='all, delete-orphan')
 
 
 class Review(db.Model):
-    __tablename__ = 'reviuws'  # Figyelve az eredeti elírásra
+    __tablename__ = 'reviuws'  # Az adatbázis pontos táblaneve alapján
     
     reviuw_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.booking_id', ondelete='CASCADE'))
     reviewer_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'))
-    rating = db.Column(db.Integer)
+    rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
