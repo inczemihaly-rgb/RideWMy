@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIDEWMY - Utak keresése</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/hu.js"></script>
+
+    <style>
+        :root {
+            --primary-purple: #635BFF;
+            --primary-hover: #5046e5;
+            --bg-gray: #EFEFEF;
+            --card-radius: 16px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-gray);
+            color: #1f2937;
+        }
+
+        .brand-logo, .font-bagel {
+            font-family: 'Bagel Fat One', cursive;
+        }
+
+        .btn-purple {
+            background-color: var(--primary-purple);
+            color: white;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            padding: 10px 18px;
+            transition: all 0.2s;
+        }
+
+        .btn-purple:hover {
+            background-color: var(--primary-hover);
+            color: white;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .figma-input-wrapper {
+            background-color: #F3F4F6;
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .figma-input-wrapper i {
+            color: var(--primary-purple);
+            font-size: 1rem;
+        }
+
+        .figma-input-wrapper input {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 1000;
+            max-height: 220px;
+            overflow-y: auto;
+            display: none;
+            padding: 4px 0;
+        }
+
+        .autocomplete-item {
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #374151;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #F3F4F6;
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+
+        .map-wrapper {
+            height: 200px;
+            min-height: 180px;
+            max-height: 550px;
+            border-radius: var(--card-radius) var(--card-radius) 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .map-drag-handle {
+            height: 16px;
+            background-color: #F3F4F6;
+            border-top: 1px solid #E5E7EB;
+            border-radius: 0 0 var(--card-radius) var(--card-radius);
+            cursor: ns-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .map-drag-handle-bar {
+            width: 36px;
+            height: 4px;
+            background-color: #D1D5DB;
+            border-radius: 2px;
+        }
+
+        .avatar-circle {
+            background-color: #E5E7EB;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+        }
+
+        .user-pill {
+            background-color: #F3F4F6;
+            border-radius: 30px;
+            padding: 4px 14px 4px 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-avatar-tag {
+            background-color: #EDE9FE;
+            color: var(--primary-purple);
+            font-weight: 700;
+            font-size: 0.8rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rating-badge {
+            background-color: #FFF8E7;
+            color: #1F2937;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .rating-badge i {
+            color: #F59E0B;
+        }
+
+        .badge-seats {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .btn-map-preview {
+            background-color: #F3F4F6;
+            color: #6B7280;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            font-weight: 500;
+        }
+
+        .btn-toggle-expand {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: #ffffff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .route-option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #1F2937;
+            transition: all 0.15s;
+        }
+
+        .route-option-btn:hover {
+            background: #EDE9FE;
+            border-color: var(--primary-purple);
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+
+        .route-live-badge-search {
+            background-color: #EDE9FE;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: #4C1D95;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigáció -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
+        <div class="container" style="max-width: 800px;">
+            <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
+            
+            <div class="d-flex align-items-center gap-3">
+                <a href="/search" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
+                <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
+                
+                <div class="dropdown">
+                    <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar-tag">SZ</div>
+                        <span class="fw-semibold small text-dark">Szilárd T.</span>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profilom</a></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4" style="max-width: 800px;">
+        
+        <!-- Keresőblokk -->
+        <div class="card card-custom p-4 mb-3" style="overflow: visible;">
+            <h3 class="font-bagel text-center mb-4">Hova szeretnél utazni?</h3>
+            
+            <form action="/search" method="GET" id="search-form" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-geo-alt"></i>
+                        <input type="text" id="from-input" name="from" placeholder="Honnan?" autocomplete="off" value="{{ request.args.get('from', '') }}">
+                        <div id="from-results" class="autocomplete-results"></div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-geo-alt"></i>
+                        <input type="text" id="to-input" name="to" placeholder="Hová?" autocomplete="off" value="{{ request.args.get('to', '') }}">
+                        <div id="to-results" class="autocomplete-results"></div>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-calendar text-primary"></i>
+                        <input type="text" id="date-input" name="date" placeholder="Dátum" autocomplete="off" value="{{ request.args.get('date', '') }}" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="figma-input-wrapper">
+                        <i class="bi bi-people text-primary"></i>
+                        <input type="number" name="seats" min="1" max="8" placeholder="Utasok" value="{{ request.args.get('seats', '') }}">
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-purple w-100">
+                        <i class="bi bi-search me-1"></i> Keresés
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Térkép blokk -->
+        <div class="card card-custom p-0 mb-4 overflow-hidden">
+            <div id="map-wrapper" class="map-wrapper">
+                <button id="toggle-expand-btn" class="btn btn-toggle-expand">
+                    <i class="bi bi-arrows-angle-expand me-1"></i> Nézet nagyítása
+                </button>
+                <div id="map"></div>
+            </div>
+            <div id="map-drag-handle" class="map-drag-handle" title="Húzd a magasság módosításához">
+                <div class="map-drag-handle-bar"></div>
+            </div>
+
+            <div id="search-route-live-info" class="route-live-badge-search d-none m-3">
+                <div><i class="bi bi-clock-history me-1"></i> Menetidő: <strong id="search-info-duration">-</strong></div>
+                <div><i class="bi bi-signpost-split me-1"></i> Távolság: <strong id="search-info-distance">-</strong></div>
+                <div><i class="bi bi-flag me-1"></i> Érkezés: <strong id="search-info-arrival">-</strong></div>
+            </div>
+        </div>
+
+        <!-- Lista léce és Szűrők törlése -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="font-bagel m-0">Elérhető utak</h4>
+            <a href="/search" id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted {% if not request.args.get('from') and not request.args.get('to') and not request.args.get('date') and not request.args.get('seats') %}d-none{% endif %}">
+                <i class="bi bi-x-circle me-1"></i> Szűrők törlése
+            </a>
+        </div>
+
+        <!-- Találati kártyák konténere -->
+        <div id="rides-container" class="d-flex flex-column gap-3"></div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        flatpickr("#date-input", {
+            dateFormat: "Y-m-d",
+            locale: "hu",
+            onChange: function() {
+                updateSearchLiveRoute();
+            }
+        });
+
+        const popularCities = [
+            { name: "Barót", lat: 46.0747, lng: 25.6025, alt: ["barot", "baraolt"] },
+            { name: "Farkaslaka", lat: 46.3811, lng: 25.2153, alt: ["farkaslaka", "lupeni"] },
+            { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures"] },
+            { name: "Kolozsvár", lat: 46.7712, lng: 23.6236, alt: ["kolozsvar", "cluj"] },
+            { name: "Brassó", lat: 45.6579, lng: 25.6012, alt: ["brasso", "brasov"] },
+            { name: "Nagyszeben", lat: 45.7983, lng: 24.1256, alt: ["nagyszeben", "sibiu"] },
+            { name: "Sepsiszentgyörgy", lat: 45.8636, lng: 25.7878, alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
+            { name: "Székelyudvarhely", lat: 46.3053, lng: 25.2936, alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
+            { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] }
+        ];
+
+        let currentRidesData = {{ rides | tojson if rides is defined else '[]' }};
+
+        const map = L.map('map', { zoomControl: true }).setView([46.4, 24.8], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        let activeCityMarkers = [];
+        let currentActiveRouteElements = [];
+
+        const mapWrapper = document.getElementById('map-wrapper');
+        const dragHandle = document.getElementById('map-drag-handle');
+        const toggleExpandBtn = document.getElementById('toggle-expand-btn');
+
+        let isDragging = false;
+        let startY = 0;
+        let startHeight = 0;
+
+        function updateExpandButtonState(height) {
+            if (height >= 300) {
+                toggleExpandBtn.innerHTML = '<i class="bi bi-arrows-angle-contract me-1"></i> Nézet kicsinyítése';
+            } else {
+                toggleExpandBtn.innerHTML = '<i class="bi bi-arrows-angle-expand me-1"></i> Nézet nagyítása';
+            }
+        }
+
+        dragHandle.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startY = e.clientY;
+            startHeight = mapWrapper.offsetHeight;
+            dragHandle.classList.add('dragging');
+            document.body.style.cursor = 'ns-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            const deltaY = e.clientY - startY;
+            let newHeight = startHeight + deltaY;
+            if (newHeight < 180) newHeight = 180;
+            if (newHeight > 550) newHeight = 550;
+
+            mapWrapper.style.height = `${newHeight}px`;
+            updateExpandButtonState(newHeight);
+            map.invalidateSize();
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                dragHandle.classList.remove('dragging');
+                document.body.style.cursor = 'default';
+                map.invalidateSize();
+            }
+        });
+
+        toggleExpandBtn.addEventListener('click', function() {
+            const currentH = mapWrapper.offsetHeight;
+            let targetH = currentH < 300 ? 420 : 200;
+            mapWrapper.style.height = `${targetH}px`;
+            updateExpandButtonState(targetH);
+            setTimeout(() => { map.invalidateSize(); }, 200);
+        });
+
+        function normalizeText(text) {
+            if (!text) return "";
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ț/g, "t").replace(/Ț/g, "t").replace(/ș/g, "s").replace(/Ș/g, "s").replace(/ă/g, "a").replace(/Ă/g, "a").replace(/î/g, "i").replace(/Î/g, "i").replace(/â/g, "a").replace(/Â/g, "a").toLowerCase().trim();
+        }
+
+        function isCyrillic(str) { return /[\u0400-\u04FF]/.test(str); }
+
+        function clearAllMapElements() {
+            activeCityMarkers.forEach(m => map.removeLayer(m));
+            activeCityMarkers = [];
+            clearActiveRoute();
+        }
+
+        function clearActiveRoute() {
+            currentActiveRouteElements.forEach(el => map.removeLayer(el));
+            currentActiveRouteElements = [];
+        }
+
+        function fitMapBoundsSmart(group) {
+            map.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 9 });
+        }
+
+        function formatDuration(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return hrs > 0 ? (mins > 0 ? `${hrs} óra ${mins} perc` : `${hrs} óra`) : `${mins} perc`;
+        }
+
+        // KÁRTYÁK KIRAJZOLÁSA: A Foglalás gomb átirányít a /ride/<id> részletező oldalra
+        function renderRidesCardsOnly(data) {
+            const container = document.getElementById('rides-container');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="card card-custom p-4 text-center text-muted"><i class="bi bi-emoji-frown fs-2 mb-2"></i><p class="m-0">Sajnos nem található a keresésnek megfelelő út.</p></div>`;
+                return;
+            }
+
+            data.forEach((ride) => {
+                const card = document.createElement('div');
+                card.className = 'card card-custom p-3';
+
+                const durationBadge = ride.duration ? `<span class="badge bg-light text-primary border border-primary-subtle fw-medium me-1"><i class="bi bi-clock me-1"></i>${ride.duration}</span>` : '';
+                const distanceBadge = ride.distance ? `<span class="badge bg-light text-secondary border fw-medium"><i class="bi bi-signpost-split me-1"></i>${ride.distance}</span>` : '';
+                const carBadge = ride.car ? `<span class="badge bg-light text-dark border ms-1 fw-medium">🚘 ${ride.car}</span>` : '';
+
+                card.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 160px;">
+                            <div class="avatar-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-fill text-secondary fs-3"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark small">${ride.driver}</div>
+                                <span class="rating-badge mt-1"><i class="bi bi-star-fill"></i> ${ride.rating}</span>
+                            </div>
+                        </div>
+
+                        <div class="col px-4">
+                            <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
+                                <i class="bi bi-calendar-event text-primary"></i>
+                                <span class="fw-medium">${ride.startTime}</span>
+                                <span class="text-purple fw-bold ms-1">(${ride.startHour} &rarr; ${ride.endTime})</span>
+                                ${carBadge}
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="fw-bold text-dark small"><i class="bi bi-geo-alt text-muted me-1"></i>${ride.from} &rarr; ${ride.to}</span>
+                                ${durationBadge}
+                                ${distanceBadge}
+                            </div>
+                            <div>
+                                <button class="btn btn-map-preview btn-preview-action">
+                                    <i class="bi bi-geo-alt-fill text-primary me-1"></i> Térkép megtekintése
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-auto text-end">
+                            <span class="badge badge-seats mb-2 d-inline-block">${ride.seats}</span>
+                            <div class="fs-5 fw-bold text-dark mb-2">${ride.price} <span class="fs-6 fw-normal text-muted">/ fő</span></div>
+                            <a href="/ride/${ride.id}" class="btn btn-purple px-4 py-2 text-decoration-none fs-6 d-inline-block">Foglalás</a>
+                        </div>
+                    </div>`;
+
+                container.appendChild(card);
+
+                card.querySelector('.btn-preview-action').addEventListener('click', () => {
+                    if (ride.fromLat && ride.fromLng && ride.toLat && ride.toLng) {
+                        focusRideRoute(ride.fromLat, ride.fromLng, ride.toLat, ride.toLng, ride.from, ride.to);
+                    }
+                });
+            });
+        }
+
+        window.selectRouteFromPopup = function(fLat, fLng, tLat, tLng, fromName, toName) {
+            map.closePopup();
+            focusRideRoute(parseFloat(fLat), parseFloat(fLng), parseFloat(tLat), parseFloat(tLng), fromName, toName);
+        };
+
+        function focusRideRoute(fLat, fLng, tLat, tLng, fromName, toName) {
+            clearAllMapElements();
+
+            const filteredRides = currentRidesData.filter(r => r.from === fromName && r.to === toName);
+            renderRidesCardsOnly(filteredRides.length > 0 ? filteredRides : currentRidesData);
+
+            const startMarker = L.marker([fLat, fLng]).addTo(map);
+            const endMarker = L.marker([tLat, tLng]).addTo(map);
+            
+            currentActiveRouteElements.push(startMarker, endMarker);
+
+            const endPopup = L.popup({ closeButton: true, autoClose: false })
+                .setContent(`<b>${toName}</b> (Érkezés)`);
+            
+            endMarker.bindPopup(endPopup);
+
+            endMarker.on('popupclose', function() {
+                resetMapToDefault();
+            });
+
+            fetch(`http://router.project-osrm.org/route/v1/driving/${fLng},${fLat};${tLng},${tLat}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(osrmData => {
+                    let routeLayer;
+                    if (osrmData.routes && osrmData.routes.length > 0) {
+                        routeLayer = L.geoJSON(osrmData.routes[0].geometry, {
+                            style: { color: '#635BFF', weight: 4, opacity: 0.85 }
+                        }).addTo(map);
+                    } else {
+                        routeLayer = L.polyline([[fLat, fLng], [tLat, tLng]], {
+                            color: '#635BFF', weight: 4, dashArray: '6, 8'
+                        }).addTo(map);
+                    }
+                    
+                    currentActiveRouteElements.push(routeLayer);
+                    endMarker.openPopup();
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                })
+                .catch(() => {
+                    const routeLayer = L.polyline([[fLat, fLng], [tLat, tLng]], {
+                        color: '#635BFF', weight: 4, dashArray: '6, 8'
+                    }).addTo(map);
+                    
+                    currentActiveRouteElements.push(routeLayer);
+                    endMarker.openPopup();
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                });
+        }
+
+        function resetMapToDefault() {
+            clearActiveRoute();
+            renderRides(currentRidesData);
+        }
+
+        function updateSearchLiveRoute() {
+            const fromVal = document.getElementById('from-input').value.trim();
+            const toVal = document.getElementById('to-input').value.trim();
+            const dateVal = document.getElementById('date-input').value.trim();
+
+            if (!fromVal || !toVal) {
+                document.getElementById('search-route-live-info').classList.add('d-none');
+                return;
+            }
+
+            Promise.all([
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fromVal)}&countrycodes=ro&limit=1`).then(r=>r.json()),
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(toVal)}&countrycodes=ro&limit=1`).then(r=>r.json())
+            ]).then(([fromData, toData]) => {
+                if (fromData.length > 0 && toData.length > 0) {
+                    const fCoords = [parseFloat(fromData[0].lat), parseFloat(fromData[0].lon)];
+                    const tCoords = [parseFloat(toData[0].lat), parseFloat(toData[0].lon)];
+
+                    fetch(`http://router.project-osrm.org/route/v1/driving/${fCoords[1]},${fCoords[0]};${tCoords[1]},${tCoords[0]}?overview=false`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.routes && data.routes.length > 0) {
+                                const route = data.routes[0];
+                                const minutes = Math.round(route.duration / 60);
+                                const km = Math.round(route.distance / 1000);
+
+                                document.getElementById('search-info-duration').innerText = formatDuration(minutes);
+                                document.getElementById('search-info-distance').innerText = `${km} km`;
+
+                                if (dateVal) {
+                                    const depDate = new Date(dateVal + 'T10:00:00');
+                                    const arrDate = new Date(depDate.getTime() + minutes * 60000);
+                                    const h = String(arrDate.getHours()).padStart(2, '0');
+                                    const m = String(arrDate.getMinutes()).padStart(2, '0');
+                                    document.getElementById('search-info-arrival').innerText = `${h}:${m}`;
+                                } else {
+                                    document.getElementById('search-info-arrival').innerText = '-';
+                                }
+
+                                document.getElementById('search-route-live-info').classList.remove('d-none');
+                            }
+                        }).catch(()=>{});
+                }
+            }).catch(()=>{});
+        }
+
+        function renderRides(data) {
+            clearAllMapElements();
+            renderRidesCardsOnly(data);
+
+            if (data.length === 0) return;
+
+            const cityGroups = {};
+
+            data.forEach((ride) => {
+                if (ride.fromLat && ride.fromLng) {
+                    if (!cityGroups[ride.from]) {
+                        cityGroups[ride.from] = { lat: ride.fromLat, lng: ride.fromLng, cityName: ride.from, rides: [] };
+                    }
+                    cityGroups[ride.from].rides.push(ride);
+                }
+            });
+
+            Object.keys(cityGroups).forEach(cityName => {
+                const group = cityGroups[cityName];
+                const marker = L.marker([group.lat, group.lng]).addTo(map);
+
+                let popupContent = `<div style="min-width:140px;">
+                    <div style="font-weight:700; border-bottom:1px solid #E5E7EB; padding-bottom:4px; margin-bottom:4px; color:#1F2937;">
+                        <i class="bi bi-geo-alt-fill text-primary"></i> ${group.cityName}
+                    </div>
+                    <div style="font-size:0.75rem; color:#6B7280; margin-bottom:4px;">Elérhető úticélok:</div>`;
+
+                group.rides.forEach((r) => {
+                    popupContent += `
+                        <button class="route-option-btn" onclick="window.selectRouteFromPopup('${r.fromLat}', '${r.fromLng}', '${r.toLat}', '${r.toLng}', '${r.from}', '${r.to}')">
+                            &rarr; <strong>${r.to}</strong> <span style="color:#6B7280;">(${r.driver})</span>
+                        </button>`;
+                });
+
+                popupContent += `</div>`;
+
+                const popup = L.popup({ className: 'map-hover-popup', closeButton: false, offset: [0, -20] }).setContent(popupContent);
+                marker.on('mouseover', function() { this.bindPopup(popup).openPopup(); });
+                activeCityMarkers.push(marker);
+            });
+
+            if (activeCityMarkers.length > 0) {
+                fitMapBoundsSmart(L.featureGroup(activeCityMarkers));
+            }
+        }
+
+        function setupFastAutocomplete(inputId, resultsId) {
+            const input = document.getElementById(inputId);
+            const resultsDiv = document.getElementById(resultsId);
+            let apiTimeout = null;
+
+            if (!input || !resultsDiv) return;
+
+            input.addEventListener('input', function() {
+                clearTimeout(apiTimeout);
+                const queryRaw = this.value.trim();
+                const queryNorm = normalizeText(queryRaw);
+                updateSearchLiveRoute();
+
+                if (queryNorm.length < 1) {
+                    resultsDiv.style.display = 'none';
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+
+                const localMatches = popularCities.filter(c => {
+                    const nameNorm = normalizeText(c.name);
+                    return nameNorm.includes(queryNorm) || (c.alt && c.alt.some(a => normalizeText(a).includes(queryNorm)));
+                });
+
+                const addedNames = new Set();
+                resultsDiv.innerHTML = '';
+
+                localMatches.forEach(item => {
+                    addedNames.add(normalizeText(item.name));
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'autocomplete-item';
+                    itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-primary"></i><strong>${item.name}</strong>`;
+                    itemDiv.addEventListener('click', function() {
+                        input.value = item.name;
+                        resultsDiv.style.display = 'none';
+                        updateSearchLiveRoute();
+                    });
+                    resultsDiv.appendChild(itemDiv);
+                });
+
+                if (localMatches.length > 0) resultsDiv.style.display = 'block';
+
+                if (queryNorm.length >= 3) {
+                    apiTimeout = setTimeout(() => {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&accept-language=hu,ro&addressdetails=1&limit=8`)
+                            .then(res => res.json())
+                            .then(data => {
+                                data.forEach(apiItem => {
+                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.municipality || apiItem.address.village || apiItem.name;
+                                    if (!cityName || isCyrillic(cityName)) return;
+                                    const cityNorm = normalizeText(cityName);
+                                    if (!addedNames.has(cityNorm)) {
+                                        addedNames.add(cityNorm);
+                                        const itemDiv = document.createElement('div');
+                                        itemDiv.className = 'autocomplete-item';
+                                        itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-muted"></i><strong>${cityName}</strong>`;
+                                        itemDiv.addEventListener('click', function() {
+                                            input.value = cityName;
+                                            resultsDiv.style.display = 'none';
+                                            updateSearchLiveRoute();
+                                        });
+                                        resultsDiv.appendChild(itemDiv);
+                                    }
+                                });
+                                if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
+                            }).catch(() => {});
+                    }, 150);
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        setupFastAutocomplete('from-input', 'from-results');
+        setupFastAutocomplete('to-input', 'to-results');
+
+        renderRides(currentRidesData);
+    </script>
+</body>
+</html>
