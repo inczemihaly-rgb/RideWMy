@@ -160,7 +160,7 @@
             <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
             
             <div class="d-flex align-items-center gap-3">
-                <a href="/" class="nav-link fw-medium fs-6 text-muted">Utak keresése</a>
+                <a href="/search" class="nav-link fw-medium fs-6 text-muted">Utak keresése</a>
                 <a href="/create-ride" class="nav-link fw-bold text-dark fs-6">Hirdetés feladása</a>
                 
                 <div class="dropdown">
@@ -186,8 +186,20 @@
                 <p class="text-muted small">Oszd meg az utad, és utazzatok együtt!</p>
             </div>
 
-            <form action="/create-ride" method="POST">
-                <!-- Jármű kiválasztása vagy új beírása -->
+            <!-- Flash üzenetek megjelenítése hiba esetén -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/create-ride" method="POST" id="create-ride-form">
+                <!-- Jármű kiválasztása -->
                 <div class="mb-3">
                     <label class="form-label small fw-medium text-secondary">Jármű kiválasztása</label>
                     <select id="car-select" name="car_id" class="form-select form-select-custom" required>
@@ -249,10 +261,13 @@
                     <div><i class="bi bi-flag me-1"></i> Érkezés: <strong id="info-arrival">-</strong></div>
                 </div>
 
-                <!-- Dátum és idő mező -->
+                <!-- Dátum és idő mező (Kötelező kitölteni + Múltbéli dátumok tiltása) -->
                 <div class="mb-3">
-                    <label class="form-label small fw-medium text-secondary">Dátum és idő</label>
+                    <label class="form-label small fw-medium text-secondary">Dátum és idő <span class="text-danger">*</span></label>
                     <input type="text" id="datetime-picker" name="datetime" class="form-control form-control-custom bg-white" placeholder="Válassz dátumot és időpontot..." required readonly>
+                    <div id="date-error" class="text-danger small mt-1 d-none">
+                        <i class="bi bi-exclamation-circle me-1"></i> Kérjük, válassz ki egy indulási dátumot és időpontot!
+                    </div>
                 </div>
 
                 <div class="row g-3 mb-4">
@@ -272,7 +287,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-purple w-100 fs-6 mb-2">
-                    Hirdetés közzététele
+                    Hirdetés közzététel
                 </button>
 
                 <div class="text-center">
@@ -289,7 +304,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Új autó mezők megjelenítése / elrejtése
         const carSelect = document.getElementById('car-select');
         const newCarFields = document.getElementById('new-car-fields');
 
@@ -303,16 +317,29 @@
 
         let calculatedDurationMinutes = 0;
 
+        // Flatpickr beállítása: Nincs alapértelmezett dátum, és tiltja a múltbéli napokat (minDate: "today")
         const datePicker = flatpickr("#datetime-picker", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
             time_24hr: true,
             locale: "hu",
+            minDate: "today",
             defaultHour: 10,
             defaultMinute: 0,
             minuteIncrement: 15,
             onChange: function(selectedDates) {
+                document.getElementById('date-error').classList.add('d-none');
                 updateArrivalDisplay(selectedDates[0]);
+            }
+        });
+
+        // Form ellenőrzése elküldés előtt
+        document.getElementById('create-ride-form').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('datetime-picker');
+            if (!dateInput.value.trim()) {
+                e.preventDefault();
+                document.getElementById('date-error').classList.remove('d-none');
+                dateInput.focus();
             }
         });
 
@@ -420,13 +447,7 @@
             { name: "Nagyszeben", alt: ["nagyszeben", "sibiu"] },
             { name: "Sepsiszentgyörgy", alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
             { name: "Székelyudvarhely", alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
-            { name: "Csíkszereda", alt: ["csikszereda", "miercurea ciuc"] },
-            { name: "Gyergyószentmiklós", alt: ["gyergyoszentmiklos", "gheorgheni"] },
-            { name: "Kézdivásárhely", alt: ["kezdivasarhely", "targu secuiesc"] },
-            { name: "Nagyvárad", alt: ["nagyvarad", "oradea"] },
-            { name: "Arad", alt: ["arad"] },
-            { name: "Temesvár", alt: ["temesvar", "timisoara"] },
-            { name: "Bukarest", alt: ["bukarest", "bucuresti"] }
+            { name: "Csíkszereda", alt: ["csikszereda", "miercurea ciuc"] }
         ];
 
         function normalizeText(text) {
@@ -443,9 +464,7 @@
                 .trim();
         }
 
-        function isCyrillic(str) {
-            return /[\u0400-\u04FF]/.test(str);
-        }
+        function isCyrillic(str) { return /[\u0400-\u04FF]/.test(str); }
 
         function setupFastAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);

@@ -180,7 +180,6 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            text-decoration: none;
         }
 
         .rating-badge i {
@@ -258,12 +257,13 @@
 </head>
 <body>
 
+    <!-- Navigáció -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
         <div class="container" style="max-width: 800px;">
             <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
             
             <div class="d-flex align-items-center gap-3">
-                <a href="/" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
+                <a href="/search" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
                 <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
                 
                 <div class="dropdown">
@@ -282,10 +282,11 @@
 
     <div class="container py-4" style="max-width: 800px;">
         
+        <!-- Keresőblokk -->
         <div class="card card-custom p-4 mb-3" style="overflow: visible;">
             <h3 class="font-bagel text-center mb-4">Hova szeretnél utazni?</h3>
             
-            <form action="/" method="GET" id="search-form" class="row g-2 align-items-center">
+            <form action="/search" method="GET" id="search-form" class="row g-2 align-items-center">
                 <div class="col-md-3">
                     <div class="figma-input-wrapper">
                         <i class="bi bi-geo-alt"></i>
@@ -324,6 +325,7 @@
             </form>
         </div>
 
+        <!-- Térkép blokk -->
         <div class="card card-custom p-0 mb-4 overflow-hidden">
             <div id="map-wrapper" class="map-wrapper">
                 <button id="toggle-expand-btn" class="btn btn-toggle-expand">
@@ -342,17 +344,20 @@
             </div>
         </div>
 
+        <!-- Lista léce és Szűrők törlése -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="font-bagel m-0">Elérhető utak</h4>
-            <a href="/" id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted {% if not request.args.get('from') and not request.args.get('to') and not request.args.get('date') and not request.args.get('seats') %}d-none{% endif %}">
+            <a href="/search" id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted {% if not request.args.get('from') and not request.args.get('to') and not request.args.get('date') and not request.args.get('seats') %}d-none{% endif %}">
                 <i class="bi bi-x-circle me-1"></i> Szűrők törlése
             </a>
         </div>
 
+        <!-- Találati kártyák konténere -->
         <div id="rides-container" class="d-flex flex-column gap-3"></div>
 
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -366,8 +371,6 @@
         });
 
         const popularCities = [
-            { name: "Hátszeg", lat: 45.6072, lng: 22.9497, alt: ["hatszeg", "hateg"] },
-            { name: "Horezu", lat: 45.1481, lng: 24.0131, alt: ["horezu"] },
             { name: "Barót", lat: 46.0747, lng: 25.6025, alt: ["barot", "baraolt"] },
             { name: "Farkaslaka", lat: 46.3811, lng: 25.2153, alt: ["farkaslaka", "lupeni"] },
             { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures"] },
@@ -376,13 +379,7 @@
             { name: "Nagyszeben", lat: 45.7983, lng: 24.1256, alt: ["nagyszeben", "sibiu"] },
             { name: "Sepsiszentgyörgy", lat: 45.8636, lng: 25.7878, alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
             { name: "Székelyudvarhely", lat: 46.3053, lng: 25.2936, alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
-            { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] },
-            { name: "Gyergyószentmiklós", lat: 46.7225, lng: 25.6006, alt: ["gyergyoszentmiklos", "gheorgheni"] },
-            { name: "Kézdivásárhely", lat: 45.8486, lng: 26.1367, alt: ["kezdivasarhely", "targu secuiesc"] },
-            { name: "Nagyvárad", lat: 47.0515, lng: 21.9402, alt: ["nagyvarad", "oradea"] },
-            { name: "Arad", lat: 46.1866, lng: 21.3123, alt: ["arad"] },
-            { name: "Temesvár", lat: 45.7537, lng: 21.2257, alt: ["temesvar", "timisoara"] },
-            { name: "Bukarest", lat: 44.4323, lng: 26.1063, alt: ["bukarest", "bucuresti"] }
+            { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] }
         ];
 
         let currentRidesData = {{ rides | tojson if rides is defined else '[]' }};
@@ -477,7 +474,7 @@
             return hrs > 0 ? (mins > 0 ? `${hrs} óra ${mins} perc` : `${hrs} óra`) : `${mins} perc`;
         }
 
-        // --- KÁRTYÁK KIRAJZOLÁSA (CSAK A LISTÁT FRISSÍTI, A TÉRKÉPET NEM) ---
+        // KÁRTYÁK KIRAJZOLÁSA: A Foglalás gomb átirányít a /ride/<id> részletező oldalra
         function renderRidesCardsOnly(data) {
             const container = document.getElementById('rides-container');
             container.innerHTML = '';
@@ -497,11 +494,13 @@
 
                 card.innerHTML = `
                     <div class="row align-items-center">
-                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 150px;">
-                            <div class="avatar-circle"></div>
+                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 160px;">
+                            <div class="avatar-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-fill text-secondary fs-3"></i>
+                            </div>
                             <div>
                                 <div class="fw-bold text-dark small">${ride.driver}</div>
-                                <a href="/reviews" class="rating-badge mt-1"><i class="bi bi-star"></i> ${ride.rating}</a>
+                                <span class="rating-badge mt-1"><i class="bi bi-star-fill"></i> ${ride.rating}</span>
                             </div>
                         </div>
 
@@ -527,7 +526,7 @@
                         <div class="col-auto text-end">
                             <span class="badge badge-seats mb-2 d-inline-block">${ride.seats}</span>
                             <div class="fs-5 fw-bold text-dark mb-2">${ride.price} <span class="fs-6 fw-normal text-muted">/ fő</span></div>
-                            <button class="btn btn-purple px-4 py-2 text-decoration-none fs-6">Foglalás</button>
+                            <a href="/ride/${ride.id}" class="btn btn-purple px-4 py-2 text-decoration-none fs-6 d-inline-block">Foglalás</a>
                         </div>
                     </div>`;
 
@@ -541,7 +540,6 @@
             });
         }
 
-        // --- ÚTVONAL KIVÁLASZTÁSA ÉS PONTOS MEGJELENÍTÉSE ---
         window.selectRouteFromPopup = function(fLat, fLng, tLat, tLng, fromName, toName) {
             map.closePopup();
             focusRideRoute(parseFloat(fLat), parseFloat(fLng), parseFloat(tLat), parseFloat(tLng), fromName, toName);
@@ -550,7 +548,6 @@
         function focusRideRoute(fLat, fLng, tLat, tLng, fromName, toName) {
             clearAllMapElements();
 
-            // Lenti lista szűrése kizárólag a kiválasztott útra
             const filteredRides = currentRidesData.filter(r => r.from === fromName && r.to === toName);
             renderRidesCardsOnly(filteredRides.length > 0 ? filteredRides : currentRidesData);
 
@@ -559,18 +556,15 @@
             
             currentActiveRouteElements.push(startMarker, endMarker);
 
-            // Célállomás felugró ablak X gomb eseménykezelése
             const endPopup = L.popup({ closeButton: true, autoClose: false })
                 .setContent(`<b>${toName}</b> (Érkezés)`);
             
             endMarker.bindPopup(endPopup);
 
-            // Ha rákattint az X-re, visszaáll a térkép ÉS az összes kártya
             endMarker.on('popupclose', function() {
                 resetMapToDefault();
             });
 
-            // OSRM közúti útvonal lekérése
             fetch(`http://router.project-osrm.org/route/v1/driving/${fLng},${fLat};${tLng},${tLat}?overview=full&geometries=geojson`)
                 .then(res => res.json())
                 .then(osrmData => {
@@ -651,7 +645,6 @@
             }).catch(()=>{});
         }
 
-        // --- ALAPÉRTELMEZETT KIRAJZOLÁS (TÉRKÉP + ÖSSZES KÁRTYA) ---
         function renderRides(data) {
             clearAllMapElements();
             renderRidesCardsOnly(data);
