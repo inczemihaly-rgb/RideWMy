@@ -59,5 +59,5 @@ A **RideWMy** egy Flask-alapú, modern telekocsi webalkalmazás, amely megkönny
 
 ### 1. Repozitórium klónozása
 ```bash
-git clone [https://github.com/felhasznalonev/RideWMy.git](https://github.com/felhasznalonev/RideWMy.git)
+git clone https://github.com/inczemihaly-rgb/RideWMy.git
 cd RideWMy
