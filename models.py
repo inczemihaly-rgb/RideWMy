@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash   #A kodolashoz kell 
 
 db = SQLAlchemy()
 
@@ -8,12 +9,23 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     full_name = db.Column(db.String(50))
     email = db.Column(db.String(100), unique=True)
-    password_hash = db.Column(db.String(55))
+    password_hash = db.Column(db.String(255)) #KEll a nagy meret a hash miatt   
     
     # Kapcsolatok a többi táblával
     cars = db.relationship('Car', backref='owner', cascade='all, delete-orphan')
     trips = db.relationship('Trip', backref='driver', cascade='all, delete-orphan')
     bookings = db.relationship('Booking', backref='passenger', cascade='all, delete-orphan')
+    
+    def __init__(self, full_name, email, password_hash):
+        self.full_name = full_name
+        self.email = email
+        self.set_password(password_hash) 
+
+    def set_password(self, password_hash):
+        self.password_hash = generate_password_hash(password_hash)
+
+    def check_password(self, password_hash):
+        return check_password_hash(self.password_hash, password_hash)
 
 
 class Car(db.Model):

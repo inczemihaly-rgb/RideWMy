@@ -92,6 +92,6 @@ with app.app_context():
         print(f"Értékelések száma:  {Review.query.count()} (Várt: 0)")
 
         print("\nSiker! Az ID szerinti felhasználó-törlés és a kaszkád mechanizmus lefutott!")
-
+        
     except Exception as e:
         print(f"HIBA TÖRTÉNT: {e}")
