@@ -111,7 +111,6 @@
             font-weight: 600;
         }
 
-        /* Térkép konténer */
         .map-wrapper {
             height: 200px;
             min-height: 180px;
@@ -127,7 +126,6 @@
             z-index: 1;
         }
 
-        /* Teljes alsó szélen végighúzódó húzósáv */
         .map-drag-handle {
             height: 16px;
             background-color: #F3F4F6;
@@ -411,7 +409,6 @@
         let activeCityMarkers = [];
         let currentActiveRoute = [];
 
-        // Dinamikus méretezés és automatikus gombkezelés
         const mapWrapper = document.getElementById('map-wrapper');
         const dragHandle = document.getElementById('map-drag-handle');
         const toggleExpandBtn = document.getElementById('toggle-expand-btn');
@@ -573,7 +570,6 @@
 
                 container.appendChild(card);
 
-                // Közvetlenül a backend által átadott koordinátákat használjuk!
                 const fLat = ride.fromLat;
                 const fLng = ride.fromLng;
                 const tLat = ride.toLat;
