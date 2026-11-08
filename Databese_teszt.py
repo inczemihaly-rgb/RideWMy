@@ -27,7 +27,7 @@ with app.app_context():
         db.session.add_all([user1, user2])
         db.session.commit()
 
-        # Eltároljuk az első felhasználó ID-ját a tisztességes ID-alapú teszthez
+        # Eltároljuk az első felhasználó ID-ját a tisztességes ID-alapú teszthez asdas
         target_user_id = user1.user_id
         target_user_id2 = user2.user_id
 

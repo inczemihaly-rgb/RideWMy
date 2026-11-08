@@ -65,7 +65,7 @@ class Booking(db.Model):
 
 
 class Review(db.Model):
-    __tablename__ = 'reviuws'  # Az adatbázis pontos táblaneve alapján
+    __tablename__ = 'reviuws'  # Az adatbázis pontos táblaneve alapján asdasd
     
     reviuw_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.booking_id', ondelete='CASCADE'))

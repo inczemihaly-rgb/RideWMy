@@ -10,7 +10,7 @@ from models import db, User, Car, Trip, Booking, Review
 app = Flask(__name__)
 app.secret_key = 'ridewmy_secret_key'
 
-# XAMPP MySQL kapcsolódás
+# XAMPP MySQL kapcsolódásasdasd
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1/ridewmy'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -386,6 +386,7 @@ def create_ride():
 
     user_cars = Car.query.filter_by(owner_id=current_user_id).all() or Car.query.all()
     return render_template('create_ride.html', cars=user_cars)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
