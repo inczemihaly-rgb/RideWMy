@@ -153,7 +153,55 @@
                 <p class="text-muted small">Oszd meg az utad, és utazzatok együtt!</p>
             </div>
 
-            <form action="/create-ride" method="POST">
+            <!-- Flash üzenetek megjelenítése hiba esetén -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/create-ride" method="POST" id="create-ride-form">
+                <!-- Jármű kiválasztása -->
+                <div class="mb-3">
+                    <label class="form-label small fw-medium text-secondary">Jármű kiválasztása</label>
+                    <select id="car-select" name="car_id" class="form-select form-select-custom" required>
+                        {% if cars %}
+                            {% for car in cars %}
+                                <option value="{{ car.car_id }}">
+                                    🚘 {{ car.brand }} {{ car.model }} ({{ car.color }}) — {{ car.plate_num }}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="1">Volkswagen Golf 7 (MS10RDE)</option>
+                        {% endif %}
+                        <option value="new" class="fw-bold text-primary">➕ Másik / Új autó megadása...</option>
+                    </select>
+                </div>
+
+                <!-- Új autó manuális beviteli mezői -->
+                <div id="new-car-fields" class="new-car-box d-none">
+                    <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-plus-circle-fill text-primary me-1"></i> Új autó adatai</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" name="new_brand" class="form-control form-control-custom" placeholder="Márka (pl. Audi)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_model" class="form-control form-control-custom" placeholder="Modell (pl. A4)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_color" class="form-control form-control-custom" placeholder="Szín (pl. Fehér)">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="new_plate_num" class="form-control form-control-custom" placeholder="Rendszám (pl. HR05XYZ)">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Honnan mező -->
                 <div class="mb-3 position-relative">
                     <label class="form-label small fw-medium text-secondary">Honnan?</label>

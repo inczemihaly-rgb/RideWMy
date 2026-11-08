@@ -21,17 +21,14 @@ with app.app_context():
         db.session.commit()
 
         print("\n2. Tesztadatok rögzítése...")
-        # Felhasználók
         user1 = User(full_name="Kovács Anna", email="anna@ridewmy.hu", password_hash="hash123")
         user2 = User(full_name="Nagy Péter", email="peter@ridewmy.hu", password_hash="hash456")
         db.session.add_all([user1, user2])
         db.session.commit()
 
-        # Eltároljuk az első felhasználó ID-ját a tisztességes ID-alapú teszthez
         target_user_id = user1.user_id
         target_user_id2 = user2.user_id
 
-        # Autó az első felhasználóhoz
         car = Car(
             owner_id=target_user_id, 
             brand="Toyota", model="Prius", color="Fehér", plate_num="ABC-123", seats=4
@@ -39,7 +36,6 @@ with app.app_context():
         db.session.add(car)
         db.session.commit()
 
-        # Utazás az első felhasználó által
         trip = Trip(
             driver_id=target_user_id, 
             car_id=car.car_id, 
@@ -52,14 +48,12 @@ with app.app_context():
         db.session.add(trip)
         db.session.commit()
 
-        # Foglalás a második felhasználótól
         booking = Booking(
             trip_id=trip.trip_id, pasinger_id=user2.user_id, seats_bookd=2, booking_status=True
         )
         db.session.add(booking)
         db.session.commit()
 
-        # Értékelés
         review = Review(
             booking_id=booking.booking_id, reviewer_id=user2.user_id, rating=5, comment="Szuper!"
         )
@@ -75,7 +69,6 @@ with app.app_context():
 
         print(f"\n3. TESZT: Töröljük a felhasználót ID alapján (user_id = {target_user_id})...")
         
-        # ID alapú lekérés és törlés a User modellből
         user_to_delete = db.session.get(User, target_user_id2)
         if user_to_delete:
             db.session.delete(user_to_delete)

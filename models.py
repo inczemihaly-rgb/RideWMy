@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash   #A kodolashoz kell 
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -9,9 +9,8 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     full_name = db.Column(db.String(50))
     email = db.Column(db.String(100), unique=True)
-    password_hash = db.Column(db.String(255)) #KEll a nagy meret a hash miatt   
+    password_hash = db.Column(db.String(255))
     
-    # Kapcsolatok a többi táblával
     cars = db.relationship('Car', backref='owner', cascade='all, delete-orphan')
     trips = db.relationship('Trip', backref='driver', cascade='all, delete-orphan')
     bookings = db.relationship('Booking', backref='passenger', cascade='all, delete-orphan')
@@ -70,7 +69,6 @@ class Booking(db.Model):
     booking_status = db.Column(db.Boolean, default=True)
     creatid_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
 
-    #Sajat boolean lekezelese a booking_status mezore
     def get_status_text(self):
         if self.booking_status:
             return "Aktív foglalás"
@@ -81,7 +79,7 @@ class Booking(db.Model):
 
 
 class Review(db.Model):
-    __tablename__ = 'reviuws'  # Figyelve az eredeti elírásra
+    __tablename__ = 'reviuws'
     
     reviuw_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.booking_id', ondelete='CASCADE'))
