@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -8,12 +9,22 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     full_name = db.Column(db.String(50))
     email = db.Column(db.String(100), unique=True)
-    password_hash = db.Column(db.String(55))
+    password_hash = db.Column(db.String(255))
     
-    # Kapcsolatok a többi táblával
     cars = db.relationship('Car', backref='owner', cascade='all, delete-orphan')
     trips = db.relationship('Trip', backref='driver', cascade='all, delete-orphan')
     bookings = db.relationship('Booking', backref='passenger', cascade='all, delete-orphan')
+    
+    def __init__(self, full_name, email, password_hash):
+        self.full_name = full_name
+        self.email = email
+        self.set_password(password_hash) 
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class Car(db.Model):
@@ -36,6 +47,8 @@ class Trip(db.Model):
     trip_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     driver_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'))
     car_id = db.Column(db.Integer, db.ForeignKey('cars.car_id', ondelete='CASCADE'))
+    start_city = db.Column(db.String(100), default='Kiindulás')
+    destination_city = db.Column(db.String(100), default='Úticél')
     start_latitude = db.Column(db.Numeric(10, 8))
     start_longitude = db.Column(db.Numeric(11, 8))
     destination_latitude = db.Column(db.Numeric(10, 8))
@@ -65,11 +78,11 @@ class Booking(db.Model):
 
 
 class Review(db.Model):
-    __tablename__ = 'reviuws'  # Az adatbázis pontos táblaneve alapján asdasd
+    __tablename__ = 'reviuws'
     
     reviuw_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.booking_id', ondelete='CASCADE'))
     reviewer_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'))
-    rating = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
