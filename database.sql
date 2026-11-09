@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS ridewmy;
 USE ridewmy;
 
 -- 3. Users tábla
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   user_id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(50),
   email VARCHAR(100) UNIQUE,
@@ -13,7 +13,7 @@ CREATE TABLE users (
 );
 
 -- 4. Cars tábla
-CREATE TABLE cars (
+CREATE TABLE IF NOT EXISTS cars (
   car_id INT AUTO_INCREMENT PRIMARY KEY,
   owner_id INT,
   brand VARCHAR(30),
@@ -24,11 +24,13 @@ CREATE TABLE cars (
   FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 5. Trips tábla
-CREATE TABLE trips (
+-- 5. Trips tábla (start_city és destination_city hozzáadva)
+CREATE TABLE IF NOT EXISTS trips (
   trip_id INT AUTO_INCREMENT PRIMARY KEY,
   driver_id INT,
   car_id INT,
+  start_city VARCHAR(100) DEFAULT 'Kiindulás',
+  destination_city VARCHAR(100) DEFAULT 'Úticél',
   start_latitude DECIMAL(10, 8),
   start_longitude DECIMAL(11, 8),
   destination_latitude DECIMAL(10, 8),
@@ -42,7 +44,7 @@ CREATE TABLE trips (
 );
 
 -- 6. Bookings tábla
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
   booking_id INT AUTO_INCREMENT PRIMARY KEY,
   trip_id INT,
   pasinger_id INT,
@@ -54,7 +56,7 @@ CREATE TABLE bookings (
 );
 
 -- 7. Reviews tábla
-CREATE TABLE reviuws (
+CREATE TABLE IF NOT EXISTS reviuws (
   reviuw_id INT AUTO_INCREMENT PRIMARY KEY,
   booking_id INT,
   reviewer_id INT,
@@ -64,6 +66,3 @@ CREATE TABLE reviuws (
   FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
   FOREIGN KEY (reviewer_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
-
-Use ridewmy;
-Show TABLES;

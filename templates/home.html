@@ -66,6 +66,7 @@
             padding: 40px;
             max-width: 850px;
             margin: 0 auto;
+            overflow: visible !important;
         }
 
         .figma-input-wrapper {
@@ -158,13 +159,14 @@
             left: 0;
             right: 0;
             background: #ffffff;
+            border: 1px solid #E5E7EB;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
             max-height: 220px;
             overflow-y: auto;
             display: none;
-            padding: 4px 0;
+            padding: 6px 0;
             text-align: left;
         }
 
@@ -173,6 +175,9 @@
             font-size: 0.85rem;
             cursor: pointer;
             color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .autocomplete-item:hover {
@@ -193,16 +198,21 @@
                 <a href="/search" class="nav-link fw-medium fs-6 text-muted">Utak keresése</a>
                 <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
                 
+                {% if session.get('user_name') %}
                 <div class="dropdown">
                     <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar-tag">SZ</div>
-                        <span class="fw-semibold small text-dark">Szilárd T.</span>
+                        <div class="user-avatar-tag">{{ session.get('user_name')[:2]|upper }}</div>
+                        <span class="fw-semibold small text-dark">{{ session.get('user_name') }}</span>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profilom</a></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
                     </ul>
                 </div>
+                {% else %}
+                <a href="/register" class="nav-link fw-medium fs-6 text-muted">Regisztráció</a>
+                <a href="/login" class="btn btn-purple px-4 py-2 text-decoration-none fs-6">Bejelentkezés</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -253,11 +263,10 @@
 
         <div class="row row-cols-1 row-cols-md-3 g-4 mb-5 justify-content-center">
             {% if rides %}
-                {% for ride in rides %}
+                {% for ride in rides[:3] %}
                 <div class="col">
                     <div class="card ride-card p-4 text-center h-100 d-flex flex-column justify-content-between">
                         <div>
-                            <!-- Sofőr Fejléc -->
                             <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
                                 <div class="avatar-circle d-flex align-items-center justify-content-center">
                                     <i class="bi bi-person-fill text-secondary fs-2"></i>
@@ -270,7 +279,6 @@
                                 </div>
                             </div>
 
-                            <!-- Utazási részletek -->
                             <div class="text-secondary small mb-4 text-center">
                                 <div class="mb-2">
                                     <span class="fw-medium text-dark fs-6">
@@ -285,7 +293,6 @@
                             </div>
                         </div>
 
-                        <!-- Alsó blokk -->
                         <div>
                             <div class="mb-3">
                                 <span class="badge badge-seats">{{ ride.seats }}</span>
@@ -327,7 +334,8 @@
             { name: "Nagyszeben", alt: ["nagyszeben", "sibiu"] },
             { name: "Sepsiszentgyörgy", alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
             { name: "Székelyudvarhely", alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
-            { name: "Csíkszereda", alt: ["csikszereda", "miercurea ciuc"] }
+            { name: "Csíkszereda", alt: ["csikszereda", "miercurea ciuc"] },
+            { name: "Bacău", alt: ["bacau"] }
         ];
 
         function normalizeText(text) {
@@ -335,17 +343,15 @@
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ț/g, "t").replace(/Ț/g, "t").replace(/ș/g, "s").replace(/Ș/g, "s").replace(/ă/g, "a").replace(/Ă/g, "a").replace(/î/g, "i").replace(/Î/g, "i").replace(/â/g, "a").replace(/Â/g, "a").toLowerCase().trim();
         }
 
-        function isCyrillic(str) { return /[\u0400-\u04FF]/.test(str); }
-
         function setupFastAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);
             const resultsDiv = document.getElementById(resultsId);
-            let apiTimeout = null;
+            let debounceTimer = null;
 
             if (!input || !resultsDiv) return;
 
             input.addEventListener('input', function() {
-                clearTimeout(apiTimeout);
+                clearTimeout(debounceTimer);
                 const queryRaw = this.value.trim();
                 const queryNorm = normalizeText(queryRaw);
 
@@ -367,8 +373,9 @@
                     addedNames.add(normalizeText(item.name));
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'autocomplete-item';
-                    itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-primary"></i><strong>${item.name}</strong>`;
-                    itemDiv.addEventListener('click', function() {
+                    itemDiv.innerHTML = `<div><i class="bi bi-geo-alt-fill me-2 text-primary"></i><strong>${item.name}</strong></div><span class="text-muted small">Románia</span>`;
+                    itemDiv.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         input.value = item.name;
                         resultsDiv.style.display = 'none';
                     });
@@ -377,30 +384,40 @@
 
                 if (localMatches.length > 0) resultsDiv.style.display = 'block';
 
-                if (queryNorm.length >= 3) {
-                    apiTimeout = setTimeout(() => {
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&accept-language=hu,ro&addressdetails=1&limit=8`)
+                if (queryNorm.length >= 2) {
+                    debounceTimer = setTimeout(() => {
+                        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(queryRaw)}&bbox=20.2,43.6,29.7,48.3&limit=10`)
                             .then(res => res.json())
                             .then(data => {
-                                data.forEach(apiItem => {
-                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.municipality || apiItem.address.village || apiItem.name;
-                                    if (!cityName || isCyrillic(cityName)) return;
-                                    const cityNorm = normalizeText(cityName);
-                                    if (!addedNames.has(cityNorm)) {
-                                        addedNames.add(cityNorm);
-                                        const itemDiv = document.createElement('div');
-                                        itemDiv.className = 'autocomplete-item';
-                                        itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-muted"></i><strong>${cityName}</strong>`;
-                                        itemDiv.addEventListener('click', function() {
-                                            input.value = cityName;
-                                            resultsDiv.style.display = 'none';
-                                        });
-                                        resultsDiv.appendChild(itemDiv);
-                                    }
-                                });
-                                if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
+                                if (data && data.features && data.features.length > 0) {
+                                    data.features.forEach(feat => {
+                                        const props = feat.properties;
+                                        if (props.countrycode && props.countrycode.toLowerCase() !== 'ro') return;
+                                        if (props.country && !['romania', 'românia'].includes(props.country.toLowerCase())) return;
+
+                                        const cityName = props.name || props.city || props.town || props.village;
+                                        if (!cityName) return;
+
+                                        const cityNorm = normalizeText(cityName);
+                                        if (!addedNames.has(cityNorm)) {
+                                            addedNames.add(cityNorm);
+                                            const county = props.county || props.state || 'Románia';
+
+                                            const itemDiv = document.createElement('div');
+                                            itemDiv.className = 'autocomplete-item';
+                                            itemDiv.innerHTML = `<div><i class="bi bi-geo-alt me-2 text-secondary"></i><strong>${cityName}</strong></div><span class="text-muted small">${county}</span>`;
+                                            itemDiv.addEventListener('click', function(e) {
+                                                e.stopPropagation();
+                                                input.value = cityName;
+                                                resultsDiv.style.display = 'none';
+                                            });
+                                            resultsDiv.appendChild(itemDiv);
+                                        }
+                                    });
+                                    if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
+                                }
                             }).catch(() => {});
-                    }, 150);
+                    }, 100);
                 }
             });
 
