@@ -15,7 +15,7 @@ class User(db.Model):
     cars = db.relationship('Car', backref='owner', cascade='all, delete-orphan')
     trips = db.relationship('Trip', backref='driver', cascade='all, delete-orphan')
     bookings = db.relationship('Booking', backref='passenger', cascade='all, delete-orphan')
-    
+    '''Kodolasert felelos resz'''
     def __init__(self, full_name, email, password_hash):
         self.full_name = full_name
         self.email = email
