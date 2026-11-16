@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import urllib.request
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from sqlalchemy.exc import IntegrityError
 from models import db, User, Car, Trip, Booking, Review
 
 app = Flask(__name__)
@@ -229,7 +230,7 @@ def create_ride():
         return redirect(url_for('login'))
 
     current_user_id = session['user_id']
-    # Kizárólag a bejelentkezett felhasználó saját autóit kérjük le
+    # Kizárólag a bejelentkezett felhasználó saját autóit jelenítjük meg
     user_cars = Car.query.filter_by(owner_id=current_user_id).all()
 
     if request.method == 'POST':
@@ -269,31 +270,67 @@ def create_ride():
                 return render_template('create_ride.html', cars=user_cars)
 
         if car_option == 'new' or not user_cars:
-            new_car = Car(
-                owner_id=current_user_id,
-                brand=request.form.get('new_brand', 'Egyedi'),
-                model=request.form.get('new_model', 'Model'),
-                color=request.form.get('new_color', 'Fekete'),
-                plate_num=request.form.get('new_plate_num', 'AB00XYZ'),
-                seats=int(seats) if seats else 4
-            )
-            db.session.add(new_car)
-            db.session.commit()
-            car_id = new_car.car_id
+            brand = request.form.get('new_brand', '').strip() or 'Egyedi'
+            model = request.form.get('new_model', '').strip() or 'Model'
+            color = request.form.get('new_color', '').strip() or 'Fekete'
+            raw_plate = request.form.get('new_plate_num', '').strip()
+            plate_num = raw_plate.replace(" ", "").replace("-", "").upper()
+
+            if not plate_num:
+                flash("Kérjük, add meg az autó rendszámát!", "danger")
+                return render_template('create_ride.html', cars=user_cars)
+
+            if len(plate_num) > 7:
+                flash("A rendszám maximum 7 karakter hosszú lehet (pl. HR05XYZ)!", "danger")
+                return render_template('create_ride.html', cars=user_cars)
+
+            # Ha a rendszám már létezik az adatbázisban, csendben azt használjuk
+            existing_car = Car.query.filter_by(plate_num=plate_num).first()
+
+            if existing_car:
+                car_id = existing_car.car_id
+            else:
+                new_car = Car(
+                    owner_id=current_user_id,
+                    brand=brand,
+                    model=model,
+                    color=color,
+                    plate_num=plate_num,
+                    seats=int(seats) if (seats and seats.isdigit()) else 4
+                )
+                try:
+                    db.session.add(new_car)
+                    db.session.commit()
+                    car_id = new_car.car_id
+                except IntegrityError:
+                    db.session.rollback()
+                    fallback_car = Car.query.filter_by(plate_num=plate_num).first()
+                    if fallback_car:
+                        car_id = fallback_car.car_id
+                    else:
+                        flash("Hiba történt az autó rögzítésekor.", "danger")
+                        return render_template('create_ride.html', cars=user_cars)
         else:
             car_id = int(car_option)
 
         new_trip = Trip(
-            driver_id=current_user_id, car_id=car_id,
-            start_city=from_city, destination_city=to_city,
-            start_latitude=f_lat, start_longitude=f_lng,
-            destination_latitude=t_lat, destination_longitude=t_lng,
-            departure_time=dep_datetime, estimated_arival_time=dep_datetime,
-            price_per_seat=float(price) if price else 0.0, available_seats=int(seats) if seats else 1
+            driver_id=current_user_id,
+            car_id=car_id,
+            start_city=from_city,
+            destination_city=to_city,
+            start_latitude=f_lat,
+            start_longitude=f_lng,
+            destination_latitude=t_lat,
+            destination_longitude=t_lng,
+            departure_time=dep_datetime,
+            estimated_arival_time=dep_datetime,
+            price_per_seat=float(price) if price else 0.0,
+            available_seats=int(seats) if (seats and seats.isdigit()) else 1
         )
         db.session.add(new_trip)
         db.session.commit()
 
+        flash("Az utad sikeresen meghirdettük!", "success")
         return redirect(url_for('search'))
 
     return render_template('create_ride.html', cars=user_cars)
