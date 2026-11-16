@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIDEWMY - Saját profil</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-purple: #635BFF;
+            --primary-hover: #5046e5;
+            --bg-gray: #F3F4F6;
+            --card-radius: 20px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-gray);
+            color: #1F2937;
+        }
+
+        .brand-logo, .font-bagel {
+            font-family: 'Bagel Fat One', cursive;
+        }
+
+        .navbar-custom {
+            background-color: #ffffff;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .user-pill {
+            background-color: #F3F4F6;
+            border-radius: 30px;
+            padding: 4px 14px 4px 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-avatar-tag {
+            background-color: #EDE9FE;
+            color: var(--primary-purple);
+            font-weight: 700;
+            font-size: 0.8rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .avatar-circle-lg {
+            background-color: #E5E7EB;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .rating-badge {
+            background-color: #FFF8E7;
+            color: #1F2937;
+            font-weight: 700;
+            font-size: 0.82rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .rating-badge i {
+            color: #F59E0B;
+        }
+
+        .icon-box-purple {
+            background-color: #EDE9FE;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-purple);
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .btn-purple {
+            background-color: var(--primary-purple);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            border: none;
+            padding: 8px 20px;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+
+        .btn-purple:hover {
+            background-color: var(--primary-hover);
+            color: white;
+        }
+
+        .btn-gray-soft {
+            background-color: #E5E7EB;
+            color: #1F2937;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            padding: 11px 18px;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-gray-soft:hover {
+            background-color: #D1D5DB;
+            color: #111827;
+        }
+
+        .btn-manage {
+            background-color: #F3F4F6;
+            color: #374151;
+            border-radius: 10px;
+            font-weight: 600;
+            border: none;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-manage:hover {
+            background-color: #E5E7EB;
+            color: #111827;
+        }
+
+        .profile-tabs {
+            background-color: #E5E7EB;
+            border-radius: 14px;
+            padding: 4px;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .profile-tab-btn {
+            border: none;
+            background: transparent;
+            color: #6B7280;
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 8px 18px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .profile-tab-btn.active {
+            background-color: #ffffff;
+            color: var(--primary-purple);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .badge-confirmed {
+            background-color: #DCFCE7;
+            color: #16A34A;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .badge-pending {
+            background-color: #FEF3C7;
+            color: #D97706;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .badge-completed {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .badge-hosted {
+            background-color: #EDE9FE;
+            color: var(--primary-purple);
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .form-control-custom {
+            background-color: #F3F4F6;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.92rem;
+        }
+
+        .form-control-custom:focus {
+            background-color: #E5E7EB;
+            box-shadow: none;
+        }
+
+        .form-control-custom:disabled {
+            background-color: #E5E7EB;
+            color: #6B7280;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigáció -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
+        <div class="container" style="max-width: 1050px;">
+            <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
+            
+            <div class="d-flex align-items-center gap-3 gap-md-4">
+                <a href="/search" class="nav-link fw-medium fs-6 text-muted">Utak keresése</a>
+                <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
+                
+                {% if user %}
+                <div class="d-flex align-items-center gap-2">
+                    {% if pending_requests_count and pending_requests_count > 0 %}
+                    <a href="#pending-requests" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-decoration-none d-inline-flex align-items-center gap-1" style="background-color: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;" title="Jóváhagyásra váró jelentkezések">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>{{ pending_requests_count }} jelentkező</span>
+                    </a>
+                    {% endif %}
+                    <div class="dropdown">
+                        <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar-tag">{{ user.full_name[:2]|upper }}</div>
+                            <span class="fw-semibold small text-dark">{{ user.full_name }}</span>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                            <li>
+                                <a class="dropdown-item fw-semibold d-flex justify-content-between align-items-center" href="/profile">
+                                    <span><i class="bi bi-person me-2"></i>Profilom</span>
+                                    {% if pending_requests_count and pending_requests_count > 0 %}
+                                        <span class="badge rounded-pill" style="background-color: #FEF3C7; color: #D97706;">{{ pending_requests_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Fő tartalom -->
+    <div class="container py-5" style="max-width: 1050px;">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show small mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-1"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-4 align-items-start">
+            
+            <!-- BAL OSZLOP: Saját profil adatok és Autó -->
+            <div class="col-md-4">
+                
+                <!-- Saját profil kártya -->
+                <div class="card card-custom p-4 mb-3">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="avatar-circle-lg">
+                            <i class="bi bi-person text-secondary fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted" style="font-size: 0.78rem;">Saját profil</div>
+                            <h5 class="font-bagel fw-bold text-dark m-0 fs-4">{{ user.full_name }}</h5>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="rating-badge">
+                            <i class="bi bi-star-fill"></i> {{ avg_rating }} ({{ review_count }} értékelés)
+                        </span>
+                    </div>
+
+                    <hr class="text-muted opacity-25 my-3">
+
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <i class="bi bi-envelope text-muted fs-5 mt-1"></i>
+                        <div>
+                            <div class="text-muted" style="font-size: 0.75rem;">E-mail cím</div>
+                            <div class="fw-semibold text-dark small">{{ user.email }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="bi bi-telephone text-muted fs-5 mt-1"></i>
+                        <div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Telefonszám</div>
+                            <div class="fw-semibold text-dark small">{{ phone_display }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Autóm kártya -->
+                <div class="card card-custom p-4 mb-3">
+                    {% if primary_car %}
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="icon-box-purple">
+                                <i class="bi bi-car-front-fill"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Autóm</div>
+                                <div class="fw-bold text-dark fs-6">{{ primary_car.brand }} {{ primary_car.model }}</div>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-3">
+
+                        <div class="d-flex justify-content-between align-items-center mb-2 small">
+                            <span class="text-muted">Szín</span>
+                            <span class="fw-bold text-dark">{{ primary_car.color }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="text-muted">Rendszám</span>
+                            <span class="fw-bold text-dark">{{ primary_car.plate_num }}</span>
+                        </div>
+                    {% else %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-box-purple">
+                                <i class="bi bi-car-front-fill"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Autóm</div>
+                                <div class="fw-semibold text-muted small">Még nincs rögzített jármű</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Akció gombok -->
+                <button type="button" class="btn btn-gray-soft w-100 mb-3" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    Profil szerkesztése
+                </button>
+
+                <div class="text-center d-flex flex-column align-items-center gap-2">
+                    <a href="/logout" class="text-secondary fw-semibold small text-decoration-none d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-box-arrow-right"></i> Kijelentkezés
+                    </a>
+                    <button type="button" class="btn btn-link text-danger fw-semibold small text-decoration-none p-0 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#deleteProfileModal">
+                        <i class="bi bi-trash3"></i> Profil törlése
+                    </button>
+                </div>
+            </div>
+
+            <!-- JOBB OSZLOP: Utazásaim -->
+            <div class="col-md-8">
+                <div class="mb-4">
+                    <h1 class="font-bagel display-6 fw-bold text-dark mb-1">Utazásaim</h1>
+                    <p class="text-muted small m-0">Lefoglalt és meghirdetett utazásaid, egy helyen.</p>
+                </div>
+
+                <!-- JÓVÁHAGYÁSRA VÁRÓ JELENTKEZÉSEK (csak akkor jelenik meg, ha van jelentkezés) -->
+                {% if pending_bookings %}
+                <div id="pending-requests" class="card card-custom p-4 mb-4" style="border-left: 4px solid #F59E0B; background-color: #FFFDF7;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 34px; height: 34px; background-color: #FEF3C7; color: #D97706;">
+                            <i class="bi bi-bell-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-bold text-dark m-0">Beérkezett jelentkezések ({{ pending_bookings|length }})</h6>
+                            <div class="text-muted" style="font-size: 0.78rem;">Itt azonnal elfogadhatod vagy elutasíthatod az utasok jelentkezését.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        {% for req in pending_bookings %}
+                        <div class="bg-white rounded-3 p-3 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold text-dark small"><i class="bi bi-person-circle text-primary me-1"></i>{{ req.passenger_name }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #EDE9FE; color: var(--primary-purple); font-size: 0.72rem;">{{ req.seats }} hely</span>
+                                </div>
+                                <div class="fw-semibold text-dark" style="font-size: 0.85rem;">
+                                    {{ req.from_city }} &rarr; {{ req.to_city }}
+                                </div>
+                                <div class="text-muted" style="font-size: 0.76rem;">
+                                    <i class="bi bi-calendar4 me-1"></i>{{ req.date_str }} ({{ req.start_hour }}) &bull; <strong class="text-dark">{{ req.total_price }} RON</strong>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                <form action="/booking/{{ req.booking_id }}/accept" method="POST" class="m-0">
+                                    <input type="hidden" name="redirect_to" value="profile">
+                                    <button type="submit" class="btn btn-purple btn-sm px-3 py-2">
+                                        <i class="bi bi-check-lg me-1"></i>Elfogadás
+                                    </button>
+                                </form>
+                                <form action="/booking/{{ req.booking_id }}/reject" method="POST" class="m-0">
+                                    <input type="hidden" name="redirect_to" value="profile">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-3 fw-semibold px-3 py-2">
+                                        <i class="bi bi-x-lg me-1"></i>Elutasítás
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Fül választó -->
+                <div class="profile-tabs mb-4">
+                    <button type="button" class="profile-tab-btn active" id="tab-upcoming-btn" onclick="switchTripsTab('upcoming')">
+                        Közelgő utak
+                    </button>
+                    <button type="button" class="profile-tab-btn" id="tab-past-btn" onclick="switchTripsTab('past')">
+                        Korábbi utak
+                    </button>
+                    <button type="button" class="profile-tab-btn" id="tab-hosted-btn" onclick="switchTripsTab('hosted')">
+                        Meghirdetett utak
+                    </button>
+                </div>
+
+                <!-- KÖZELGŐ UTAK LISTA -->
+                <div id="upcoming-trips-list" class="d-flex flex-column gap-3">
+                    {% if upcoming_bookings %}
+                        {% for item in upcoming_bookings %}
+                        <div class="card card-custom p-4">
+                            <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                                <i class="bi bi-calendar4 text-primary"></i>
+                                <span class="fw-bold text-dark small">{{ item.date_str }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <div class="text-muted small mb-1">
+                                        <i class="bi bi-clock me-1"></i> {{ item.start_hour }} &rarr; {{ item.end_hour }}
+                                    </div>
+                                    <div class="fw-bold text-dark fs-6">
+                                        <i class="bi bi-geo-alt text-muted me-1"></i> {{ item.from_city }} &rarr; {{ item.to_city }}
+                                    </div>
+                                </div>
+
+                                <div class="text-end d-flex flex-column align-items-end gap-2">
+                                    {% if item.is_confirmed %}
+                                        <span class="badge-confirmed">Megerősítve</span>
+                                    {% else %}
+                                        <span class="badge-pending">Jóváhagyásra vár</span>
+                                    {% endif %}
+                                    <a href="/ride/{{ item.trip_id }}" class="btn btn-purple text-decoration-none">Részletek</a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
+                                <span>{{ item.seats_booked }} lefoglalt hely</span>
+                                <span class="fw-bold text-dark fs-6">{{ item.total_price }} RON</span>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="button" class="btn btn-manage" data-bs-toggle="modal" data-bs-target="#manageModal{{ item.booking_id }}">
+                                    Kezelés / Módosítás
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kezelés Modál -->
+                        <div class="modal fade" id="manageModal{{ item.booking_id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 rounded-4 p-2">
+                                    <div class="modal-header border-0">
+                                        <h5 class="font-bagel fw-bold m-0">Foglalás kezelése</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body small text-muted">
+                                        <p class="mb-2 text-dark fw-semibold">{{ item.from_city }} &rarr; {{ item.to_city }} ({{ item.date_str }})</p>
+                                        <p class="mb-0">Lefoglalt helyek: <strong>{{ item.seats_booked }} hely</strong> ({{ item.total_price }} RON)</p>
+                                    </div>
+                                    <div class="modal-footer border-0 d-flex justify-content-between">
+                                        <form action="/cancel-booking/{{ item.booking_id }}" method="POST">
+                                            <button type="submit" class="btn btn-outline-danger rounded-3 fw-semibold btn-sm px-3 py-2">
+                                                <i class="bi bi-x-circle me-1"></i> Foglalás lemondása
+                                            </button>
+                                        </form>
+                                        <a href="/ride/{{ item.trip_id }}" class="btn btn-purple btn-sm">Utazás megnyitása</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="card card-custom p-5 text-center text-muted">
+                            <i class="bi bi-calendar-x fs-1 mb-2"></i>
+                            <p class="mb-3">Jelenleg nincs közelgő lefoglalt utazásod.</p>
+                            <div>
+                                <a href="/search" class="btn btn-purple text-decoration-none">Utak keresése</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- KORÁBBI UTAK LISTA -->
+                <div id="past-trips-list" class="d-flex flex-column gap-3 d-none">
+                    {% if past_bookings %}
+                        {% for item in past_bookings %}
+                        <div class="card card-custom p-4">
+                            <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                                <i class="bi bi-calendar4 text-secondary"></i>
+                                <span class="fw-bold text-dark small">{{ item.date_str }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <div class="text-muted small mb-1">
+                                        <i class="bi bi-clock me-1"></i> {{ item.start_hour }} &rarr; {{ item.end_hour }}
+                                    </div>
+                                    <div class="fw-bold text-dark fs-6">
+                                        <i class="bi bi-geo-alt text-muted me-1"></i> {{ item.from_city }} &rarr; {{ item.to_city }}
+                                    </div>
+                                </div>
+
+                                <div class="text-end d-flex flex-column align-items-end gap-2">
+                                    <span class="badge-completed">Teljesítve</span>
+                                    <a href="/reviews" class="btn btn-purple text-decoration-none">Értékelés</a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center small text-muted">
+                                <span>{{ item.seats_booked }} lefoglalt hely</span>
+                                <span class="fw-bold text-dark fs-6">{{ item.total_price }} RON</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="card card-custom p-5 text-center text-muted">
+                            <i class="bi bi-clock-history fs-1 mb-2"></i>
+                            <p class="m-0">Még nincsenek korábbi utazásaid.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- MEGHIRDETETT UTAK LISTA (Sofőrként, elöl azok, amikre jelentkeztek) -->
+                <div id="hosted-trips-list" class="d-flex flex-column gap-3 d-none">
+                    {% if my_trips %}
+                        {% for trip in my_trips %}
+                        <div class="card card-custom p-4">
+                            <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                                <i class="bi bi-calendar4 text-primary"></i>
+                                <span class="fw-bold text-dark small">{{ trip.date_str }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <div class="text-muted small mb-1">
+                                        <i class="bi bi-clock me-1"></i> {{ trip.start_hour }} &rarr; {{ trip.end_hour }}
+                                    </div>
+                                    <div class="fw-bold text-dark fs-6">
+                                        <i class="bi bi-geo-alt text-muted me-1"></i> {{ trip.from_city }} &rarr; {{ trip.to_city }}
+                                    </div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="bi bi-car-front me-1"></i> {{ trip.car_name }}
+                                    </div>
+                                </div>
+
+                                <div class="text-end d-flex flex-column align-items-end gap-2">
+                                    <div class="d-flex align-items-center flex-wrap justify-content-end gap-1">
+                                        {% if trip.pending_count > 0 %}
+                                            <span class="badge-pending">{{ trip.pending_count }} függőben</span>
+                                        {% endif %}
+                                        {% if trip.confirmed_count > 0 %}
+                                            <span class="badge-confirmed">{{ trip.confirmed_count }} elfogadva</span>
+                                        {% endif %}
+                                        <span class="badge-hosted">Saját hirdetés</span>
+                                    </div>
+                                    <a href="/manage-ride/{{ trip.trip_id }}" class="btn btn-purple text-decoration-none">Megnyitás</a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center small text-muted pt-2 border-top">
+                                <span>{{ trip.available_seats }} szabad hely &bull; {{ trip.price_per_seat }} RON / fő</span>
+                                <form action="/delete-trip/{{ trip.trip_id }}" method="POST" onsubmit="return confirm('Biztosan törlöd ezt a meghirdetett utat?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-3 fw-semibold">
+                                        <i class="bi bi-trash me-1"></i> Hirdetés törlése
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="card card-custom p-5 text-center text-muted">
+                            <i class="bi bi-car-front fs-1 mb-2"></i>
+                            <p class="mb-3">Még nem hirdettél meg saját utat.</p>
+                            <div>
+                                <a href="/create-ride" class="btn btn-purple text-decoration-none">Hirdetés feladása</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFIL SZERKESZTÉSE MODÁL -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 p-2">
+                <div class="modal-header border-0">
+                    <h5 class="font-bagel fw-bold m-0" id="editProfileModalLabel">Saját profil szerkesztése</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="/profile/edit" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Teljes név</label>
+                            <input type="text" name="full_name" class="form-control form-control-custom" value="{{ user.full_name }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">E-mail cím</label>
+                            <input type="email" class="form-control form-control-custom" value="{{ user.email }}" disabled>
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">
+                                <i class="bi bi-lock-fill me-1"></i>Az e-mail cím biztonsági okokból nem módosítható.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted">Telefonszám</label>
+                            <input type="text" name="phone" class="form-control form-control-custom" placeholder="pl. +40 740 123 456" value="{{ user.phone or '' }}">
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-3">
+                        <div class="fw-bold small text-dark mb-3"><i class="bi bi-car-front-fill text-primary me-1"></i> Saját autó adatai</div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small text-muted">Márka</label>
+                                <input type="text" name="car_brand" class="form-control form-control-custom" placeholder="pl. Peugeot" value="{{ primary_car.brand if primary_car else '' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-muted">Modell</label>
+                                <input type="text" name="car_model" class="form-control form-control-custom" placeholder="pl. 308" value="{{ primary_car.model if primary_car else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small text-muted">Szín</label>
+                                <input type="text" name="car_color" class="form-control form-control-custom" placeholder="pl. Kék" value="{{ primary_car.color if primary_car else '' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-muted">Rendszám (max. 7 kar.)</label>
+                                <input type="text" name="car_plate" maxlength="7" class="form-control form-control-custom" placeholder="pl. MS05KAK" value="{{ primary_car.plate_num if primary_car else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-gray-soft" data-bs-dismiss="modal">Mégse</button>
+                        <button type="submit" class="btn btn-purple">Mentés</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFIL TÖRLÉSE MEGERŐSÍTŐ MODÁL -->
+    <div class="modal fade" id="deleteProfileModal" tabindex="-1" aria-labelledby="deleteProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 p-2">
+                <div class="modal-header border-0">
+                    <h5 class="font-bagel fw-bold text-danger m-0" id="deleteProfileModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Profil végleges törlése
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body small text-muted">
+                    <p class="text-dark fw-semibold mb-2">Biztosan törölni szeretnéd a profilodat ({{ user.full_name }})?</p>
+                    <p class="mb-0">Ez a művelet <strong>nem visszavonható</strong>. A fiókoddal együtt minden rögzített autód, meghirdetett utad és foglalásod is véglegesen törlődik.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-gray-soft" data-bs-dismiss="modal">Mégse</button>
+                    <form action="/profile/delete" method="POST" class="m-0">
+                        <button type="submit" class="btn btn-danger rounded-3 fw-semibold px-4 py-2">
+                            Igen, profil törlése
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function switchTripsTab(tab) {
+            const tabs = ['upcoming', 'past', 'hosted'];
+            tabs.forEach(t => {
+                const listEl = document.getElementById(t + '-trips-list');
+                const btnEl = document.getElementById('tab-' + t + '-btn');
+                if (t === tab) {
+                    listEl.classList.remove('d-none');
+                    btnEl.classList.add('active');
+                } else {
+                    listEl.classList.add('d-none');
+                    btnEl.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
