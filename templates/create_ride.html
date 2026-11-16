@@ -176,7 +176,7 @@
                         <span class="fw-semibold small text-dark">{{ session.get('user_name') }}</span>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profilom</a></li>
+                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Profilom</a></li>
                         <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
                     </ul>
                 </div>
@@ -212,6 +212,7 @@
                 <input type="hidden" id="from-lng" name="from_lng" value="">
                 <input type="hidden" id="to-lat" name="to_lat" value="">
                 <input type="hidden" id="to-lng" name="to_lng" value="">
+                <input type="hidden" id="duration-minutes" name="duration_minutes" value="">
 
                 <div class="mb-3">
                     <label class="form-label small fw-medium text-secondary">Jármű kiválasztása</label>
@@ -382,6 +383,12 @@
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ț/g, "t").replace(/Ț/g, "t").replace(/ș/g, "s").replace(/Ș/g, "s").replace(/ă/g, "a").replace(/Ă/g, "a").replace(/î/g, "i").replace(/Î/g, "i").replace(/â/g, "a").replace(/Â/g, "a").toLowerCase().trim();
         }
 
+        function findExactPopularCity(rawName) {
+            const norm = normalizeText(rawName);
+            if (!norm) return null;
+            return popularCities.find(c => normalizeText(c.name) === norm || (c.alt && c.alt.some(a => normalizeText(a) === norm))) || null;
+        }
+
         function formatDuration(minutes) {
             const hrs = Math.floor(minutes / 60);
             const mins = minutes % 60;
@@ -396,6 +403,30 @@
             document.getElementById('info-arrival').innerText = `${hours}:${minutes}`;
         }
 
+        function setCalculatedDuration(minutes, distKm) {
+            calculatedDurationMinutes = Math.max(1, Math.round(minutes));
+            document.getElementById('duration-minutes').value = calculatedDurationMinutes;
+            document.getElementById('info-duration').innerText = formatDuration(calculatedDurationMinutes);
+            document.getElementById('info-distance').innerText = `${distKm} km`;
+            document.getElementById('route-live-info').classList.remove('d-none');
+
+            if (datePicker.selectedDates.length > 0) {
+                updateArrivalDisplay(datePicker.selectedDates[0]);
+            }
+        }
+
+        function estimateFallbackDuration(fromCoords, toCoords) {
+            const R = 6371;
+            const dLat = (toCoords[0] - fromCoords[0]) * Math.PI / 180;
+            const dLon = (toCoords[1] - fromCoords[1]) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(fromCoords[0] * Math.PI / 180) * Math.cos(toCoords[0] * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const distKm = Math.max(1, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.25));
+            const durMins = Math.max(5, Math.round((distKm / 65) * 60));
+            return { durMins, distKm };
+        }
+
         function updateMapPreview() {
             const fromVal = document.getElementById('from-input').value.trim();
             const toVal = document.getElementById('to-input').value.trim();
@@ -404,6 +435,26 @@
             let fLng = parseFloat(document.getElementById('from-lng').value);
             let tLat = parseFloat(document.getElementById('to-lat').value);
             let tLng = parseFloat(document.getElementById('to-lng').value);
+
+            if (isNaN(fLat) && fromVal) {
+                const match = findExactPopularCity(fromVal);
+                if (match) {
+                    fLat = match.lat;
+                    fLng = match.lng;
+                    document.getElementById('from-lat').value = fLat;
+                    document.getElementById('from-lng').value = fLng;
+                }
+            }
+
+            if (isNaN(tLat) && toVal) {
+                const match = findExactPopularCity(toVal);
+                if (match) {
+                    tLat = match.lat;
+                    tLng = match.lng;
+                    document.getElementById('to-lat').value = tLat;
+                    document.getElementById('to-lng').value = tLng;
+                }
+            }
 
             const fetchFrom = (isNaN(fLat) && fromVal) 
                 ? fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(fromVal)}&bbox=20.2,43.6,29.7,48.3&limit=5`).then(r=>r.json())
@@ -445,22 +496,16 @@
                     routeLayer = line;
                     createMap.fitBounds(line.getBounds(), { padding: [40, 40] });
 
+                    const fallback = estimateFallbackDuration(fromCoords, toCoords);
+                    setCalculatedDuration(fallback.durMins, fallback.distKm);
+
                     fetch(`https://router.project-osrm.org/route/v1/driving/${fromCoords[1]},${fromCoords[0]};${toCoords[1]},${toCoords[0]}?overview=full&geometries=geojson`)
                         .then(res => res.json())
                         .then(osrmData => {
                             if (osrmData.routes && osrmData.routes.length > 0) {
                                 if (routeLayer) createMap.removeLayer(routeLayer);
                                 const route = osrmData.routes[0];
-                                calculatedDurationMinutes = Math.round(route.duration / 60);
-                                const distKm = Math.round(route.distance / 1000);
-
-                                document.getElementById('info-duration').innerText = formatDuration(calculatedDurationMinutes);
-                                document.getElementById('info-distance').innerText = `${distKm} km`;
-                                document.getElementById('route-live-info').classList.remove('d-none');
-
-                                if (datePicker.selectedDates.length > 0) {
-                                    updateArrivalDisplay(datePicker.selectedDates[0]);
-                                }
+                                setCalculatedDuration(Math.round(route.duration / 60), Math.round(route.distance / 1000));
 
                                 routeLayer = L.geoJSON(route.geometry, {
                                     style: { color: '#635BFF', weight: 5, opacity: 0.85 }
@@ -490,7 +535,16 @@
                 const queryRaw = this.value.trim();
                 const queryNorm = normalizeText(queryRaw);
 
-                if (isFromInput) {
+                const exactMatch = findExactPopularCity(queryRaw);
+                if (exactMatch) {
+                    if (isFromInput) {
+                        document.getElementById('from-lat').value = exactMatch.lat;
+                        document.getElementById('from-lng').value = exactMatch.lng;
+                    } else {
+                        document.getElementById('to-lat').value = exactMatch.lat;
+                        document.getElementById('to-lng').value = exactMatch.lng;
+                    }
+                } else if (isFromInput) {
                     document.getElementById('from-lat').value = '';
                     document.getElementById('from-lng').value = '';
                 } else {

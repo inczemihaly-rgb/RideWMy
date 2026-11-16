@@ -9,15 +9,17 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     full_name = db.Column(db.String(50))
     email = db.Column(db.String(100), unique=True)
+    phone = db.Column(db.String(20), nullable=True)
     password_hash = db.Column(db.String(255))
     
     cars = db.relationship('Car', backref='owner', cascade='all, delete-orphan')
     trips = db.relationship('Trip', backref='driver', cascade='all, delete-orphan')
     bookings = db.relationship('Booking', backref='passenger', cascade='all, delete-orphan')
     
-    def __init__(self, full_name, email, password_hash):
+    def __init__(self, full_name, email, password_hash, phone=None):
         self.full_name = full_name
         self.email = email
+        self.phone = phone
         self.set_password(password_hash) 
 
     def set_password(self, password):

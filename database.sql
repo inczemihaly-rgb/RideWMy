@@ -4,11 +4,12 @@ CREATE DATABASE IF NOT EXISTS ridewmy;
 -- 2. Kiválasztjuk használatra
 USE ridewmy;
 
--- 3. Users tábla
+-- 3. Users tábla (telefonszámmal kiegészítve)
 CREATE TABLE IF NOT EXISTS users (
   user_id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(50),
   email VARCHAR(100) UNIQUE,
+  phone VARCHAR(20) DEFAULT NULL,
   password_hash VARCHAR(255)
 );
 
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS cars (
   FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 5. Trips tábla (start_city és destination_city hozzáadva)
+-- 5. Trips tábla
 CREATE TABLE IF NOT EXISTS trips (
   trip_id INT AUTO_INCREMENT PRIMARY KEY,
   driver_id INT,
@@ -66,3 +67,6 @@ CREATE TABLE IF NOT EXISTS reviuws (
   FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
   FOREIGN KEY (reviewer_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+-- Ha már létezik a users tábla, ezzel add hozzá a phone oszlopot adatvesztés nélkül:
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) DEFAULT NULL AFTER email;

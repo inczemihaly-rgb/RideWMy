@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIDEWMY - Utazás kezelése</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/hu.js"></script>
+
+    <style>
+        :root {
+            --primary-purple: #635BFF;
+            --primary-hover: #5046e5;
+            --bg-gray: #F3F4F6;
+            --card-radius: 20px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-gray);
+            color: #1F2937;
+        }
+
+        .brand-logo, .font-bagel {
+            font-family: 'Bagel Fat One', cursive;
+        }
+
+        .navbar-custom {
+            background-color: #ffffff;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .user-pill {
+            background-color: #F3F4F6;
+            border-radius: 30px;
+            padding: 4px 14px 4px 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-avatar-tag {
+            background-color: #EDE9FE;
+            color: var(--primary-purple);
+            font-weight: 700;
+            font-size: 0.8rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .form-control-custom, .form-select-custom {
+            background-color: #F3F4F6;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.92rem;
+            color: #1F2937;
+        }
+
+        .form-control-custom:focus, .form-select-custom:focus {
+            background-color: #E5E7EB;
+            box-shadow: none;
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+        }
+
+        .input-icon-wrapper i.left-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-purple);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        .input-icon-wrapper input,
+        .input-icon-wrapper select {
+            padding-left: 40px;
+        }
+
+        .map-manage-wrapper {
+            height: 185px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #E5E7EB;
+        }
+
+        #manage-map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .btn-purple {
+            background-color: var(--primary-purple);
+            color: white;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            padding: 12px 20px;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+        }
+
+        .btn-purple:hover {
+            background-color: var(--primary-hover);
+            color: white;
+        }
+
+        .btn-delete-soft {
+            background-color: #FEE2E2;
+            color: #DC2626;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            padding: 12px 20px;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-soft:hover {
+            background-color: #FECACA;
+            color: #B91C1C;
+        }
+
+        .btn-reject-outline {
+            background-color: #ffffff;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 10px 16px;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+
+        .btn-reject-outline:hover {
+            background-color: #FEE2E2;
+            border-color: #FECACA;
+            color: #DC2626;
+        }
+
+        .passenger-avatar {
+            background-color: #E5E7EB;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4B5563;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .badge-status-confirmed {
+            background-color: #DCFCE7;
+            color: #16A34A;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .badge-status-pending {
+            background-color: #FEF3C7;
+            color: #D97706;
+            font-weight: 600;
+            font-size: 0.78rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .phone-pill-box {
+            background-color: #F3F4F6;
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #1F2937;
+        }
+
+        .badge-seats-summary {
+            background-color: #E5E7EB;
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            z-index: 9999;
+            max-height: 210px;
+            overflow-y: auto;
+            display: none;
+            padding: 6px 0;
+            margin-top: 4px;
+        }
+
+        .autocomplete-item {
+            padding: 8px 14px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #F3F4F6;
+            color: var(--primary-purple);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigáció -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
+        <div class="container" style="max-width: 1050px;">
+            <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
+
+            <div class="d-flex align-items-center gap-3 gap-md-4">
+                <a href="/search" class="nav-link fw-medium fs-6 text-muted">Utak keresése</a>
+                <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
+
+                {% if user %}
+                <div class="d-flex align-items-center gap-2">
+                    {% if pending_requests_count and pending_requests_count > 0 %}
+                    <a href="/profile#pending-requests" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-decoration-none d-inline-flex align-items-center gap-1" style="background-color: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;" title="Új jelentkezők várnak jóváhagyásra">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>{{ pending_requests_count }} jelentkező</span>
+                    </a>
+                    {% endif %}
+                    <div class="dropdown">
+                        <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar-tag">{{ user.full_name[:2]|upper }}</div>
+                            <span class="fw-semibold small text-dark">{{ user.full_name }}</span>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                            <li>
+                                <a class="dropdown-item fw-semibold d-flex justify-content-between align-items-center" href="/profile">
+                                    <span><i class="bi bi-person me-2"></i>Profilom</span>
+                                    {% if pending_requests_count and pending_requests_count > 0 %}
+                                        <span class="badge rounded-pill" style="background-color: #FEF3C7; color: #D97706;">{{ pending_requests_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Fő tartalom -->
+    <div class="container py-4" style="max-width: 1050px;">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show small mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-1"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Vissza link és tulajdonos jelzés -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="/profile" class="text-decoration-none fw-semibold small" style="color: var(--primary-purple);">
+                &larr; Vissza a profilhoz
+            </a>
+            <span class="text-muted small">Saját hirdetés &bull; {{ user.full_name }}</span>
+        </div>
+
+        <!-- Oldal cím -->
+        <div class="mb-4">
+            <h1 class="font-bagel display-6 fw-bold text-dark mb-1">
+                Utazás kezelése: {{ trip.start_city }} &rarr; {{ trip.destination_city }}
+            </h1>
+            <p class="text-muted small m-0">Módosítsd az utazás adatait, és kezeld az utasok jelentkezéseit.</p>
+        </div>
+
+        <div class="row g-4 align-items-start">
+
+            <!-- BAL OSZLOP: Utazás adatai + Térkép előnézet -->
+            <div class="col-lg-7">
+                <div class="card card-custom p-4 p-md-5">
+                    <h4 class="font-bagel fw-bold text-dark mb-1">Utazás adatai</h4>
+                    <p class="text-muted small mb-4">Az aktuális hirdetésed adatai.</p>
+
+                    <form action="/manage-ride/{{ trip.trip_id }}" method="POST">
+                        <input type="hidden" id="from-lat" name="from_lat" value="{{ trip.start_latitude or '' }}">
+                        <input type="hidden" id="from-lng" name="from_lng" value="{{ trip.start_longitude or '' }}">
+                        <input type="hidden" id="to-lat" name="to_lat" value="{{ trip.destination_latitude or '' }}">
+                        <input type="hidden" id="to-lng" name="to_lng" value="{{ trip.destination_longitude or '' }}">
+
+                        <div class="mb-3 position-relative">
+                            <label class="form-label small fw-semibold text-secondary">Indulási helyszín</label>
+                            <input type="text" id="from-input" name="start_city" class="form-control form-control-custom" value="{{ trip.start_city }}" autocomplete="off" required>
+                            <div id="from-results" class="autocomplete-results"></div>
+                        </div>
+
+                        <div class="mb-3 position-relative">
+                            <label class="form-label small fw-semibold text-secondary">Érkezési helyszín</label>
+                            <input type="text" id="to-input" name="destination_city" class="form-control form-control-custom" value="{{ trip.destination_city }}" autocomplete="off" required>
+                            <div id="to-results" class="autocomplete-results"></div>
+                        </div>
+
+                        <!-- Útvonal térkép előnézet -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label small fw-semibold text-secondary m-0">Útvonal előnézet</label>
+                                <span id="manage-route-meta" class="text-muted" style="font-size: 0.78rem;"></span>
+                            </div>
+                            <div class="map-manage-wrapper">
+                                <div id="manage-map"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Dátum és idő</label>
+                            <div class="input-icon-wrapper">
+                                <i class="bi bi-calendar4 left-icon"></i>
+                                <input type="text" id="manage-datetime" name="datetime" class="form-control form-control-custom" value="{{ datetime_value }}" required readonly>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Szabad helyek száma</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="bi bi-people left-icon"></i>
+                                    <select name="available_seats" class="form-select form-select-custom">
+                                        {% for n in range(0, 9) %}
+                                            <option value="{{ n }}" {% if trip.available_seats == n %}selected{% endif %}>{{ n }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold text-secondary">Ár / fő (RON)</label>
+                                <input type="number" name="price_per_seat" class="form-control form-control-custom" min="1" value="{{ trip.price_per_seat | int }}" required>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 my-4">
+
+                        <div class="d-flex flex-wrap gap-3">
+                            <button type="submit" class="btn btn-purple flex-grow-1">
+                                Módosítások mentése
+                            </button>
+                            <button type="button" class="btn btn-delete-soft" data-bs-toggle="modal" data-bs-target="#deleteRideModal">
+                                Utazás törlése
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- JOBB OSZLOP: Utasok -->
+            <div class="col-lg-5">
+                <div class="card card-custom p-4 p-md-5">
+                    <h4 class="font-bagel fw-bold text-dark mb-1">Utasok</h4>
+                    <p class="text-muted small mb-0">Jelentkezett utasok ({{ booked_seats_total }}/{{ total_seats }})</p>
+
+                    <hr class="text-muted opacity-25 my-4">
+
+                    {% if passengers %}
+                        <div class="d-flex flex-column gap-4">
+                            {% for p in passengers %}
+                            <div class="{% if not loop.last %}pb-4 border-bottom{% endif %}">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="passenger-avatar">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">{{ p.full_name }}</div>
+                                            <div class="text-muted" style="font-size: 0.78rem;">{{ p.seats }} hely</div>
+                                        </div>
+                                    </div>
+
+                                    {% if p.is_confirmed %}
+                                        <span class="badge-status-confirmed">Megerősítve</span>
+                                    {% else %}
+                                        <span class="badge-status-pending">Függőben</span>
+                                    {% endif %}
+                                </div>
+
+                                {% if p.is_confirmed %}
+                                    <div class="phone-pill-box mb-1">
+                                        {{ p.phone }}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Kapcsolattartási telefonszám.</div>
+                                {% else %}
+                                    <div class="text-muted mb-3" style="font-size: 0.78rem;">
+                                        A jelentkezés a jóváhagyásodra vár.
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <form action="/booking/{{ p.booking_id }}/accept" method="POST" class="flex-fill m-0">
+                                            <button type="submit" class="btn btn-purple w-100 py-2">Elfogadás</button>
+                                        </form>
+                                        <form action="/booking/{{ p.booking_id }}/reject" method="POST" class="flex-fill m-0">
+                                            <button type="submit" class="btn btn-reject-outline w-100 py-2">Elutasítás</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-people fs-2 d-block mb-2"></i>
+                            <p class="small m-0">Még nem jelentkezett utas erre az utazásra.</p>
+                        </div>
+                    {% endif %}
+
+                    <hr class="text-muted opacity-25 my-4">
+
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span class="text-muted">Összesen {{ total_seats }} utashely</span>
+                        <span class="badge-seats-summary">{{ trip.available_seats }} szabad hely</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Utazás törlése megerősítő modál -->
+    <div class="modal fade" id="deleteRideModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 p-2">
+                <div class="modal-header border-0">
+                    <h5 class="font-bagel fw-bold text-danger m-0">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Utazás törlése
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body small text-muted">
+                    <p class="text-dark fw-semibold mb-2">Biztosan törlöd a(z) {{ trip.start_city }} &rarr; {{ trip.destination_city }} hirdetésedet?</p>
+                    <p class="mb-0">A törléssel az úthoz tartozó összes foglalás is megszűnik.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-3 fw-semibold" data-bs-dismiss="modal">Mégse</button>
+                    <form action="/delete-trip/{{ trip.trip_id }}" method="POST" class="m-0">
+                        <button type="submit" class="btn btn-danger rounded-3 fw-semibold px-4">Igen, törlés</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        flatpickr("#manage-datetime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            locale: "hu",
+            minuteIncrement: 15
+        });
+
+        let currentFromLat = {{ trip.start_latitude if trip.start_latitude is not none else 46.5425 }};
+        let currentFromLng = {{ trip.start_longitude if trip.start_longitude is not none else 24.5575 }};
+        let currentToLat = {{ trip.destination_latitude if trip.destination_latitude is not none else 46.7712 }};
+        let currentToLng = {{ trip.destination_longitude if trip.destination_longitude is not none else 23.6236 }};
+
+        const manageMap = L.map('manage-map', { zoomControl: false }).setView([currentFromLat, currentFromLng], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(manageMap);
+
+        let mapLayers = [];
+
+        function formatDurationHu(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return hrs > 0 ? (mins > 0 ? `${hrs} óra ${mins} perc` : `${hrs} óra`) : `${mins} perc`;
+        }
+
+        function drawManageRoute() {
+            mapLayers.forEach(l => manageMap.removeLayer(l));
+            mapLayers = [];
+
+            const fromLabel = document.getElementById('from-input').value.trim() || "Indulás";
+            const toLabel = document.getElementById('to-input').value.trim() || "Érkezés";
+
+            const startMarker = L.marker([currentFromLat, currentFromLng]).addTo(manageMap).bindPopup(`<b>Indulás:</b> ${fromLabel}`);
+            const endMarker = L.marker([currentToLat, currentToLng]).addTo(manageMap).bindPopup(`<b>Érkezés:</b> ${toLabel}`);
+            mapLayers.push(startMarker, endMarker);
+
+            fetch(`https://router.project-osrm.org/route/v1/driving/${currentFromLng},${currentFromLat};${currentToLng},${currentToLat}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.routes && data.routes.length > 0) {
+                        const route = data.routes[0];
+                        const routeLayer = L.geoJSON(route.geometry, {
+                            style: { color: '#635BFF', weight: 4, opacity: 0.85 }
+                        }).addTo(manageMap);
+                        mapLayers.push(routeLayer);
+                        manageMap.fitBounds(routeLayer.getBounds(), { padding: [25, 25] });
+
+                        const mins = Math.round(route.duration / 60);
+                        const km = Math.round(route.distance / 1000);
+                        document.getElementById('manage-route-meta').innerText = `${formatDurationHu(mins)} • ${km} km`;
+                    }
+                })
+                .catch(() => {
+                    const line = L.polyline([[currentFromLat, currentFromLng], [currentToLat, currentToLng]], {
+                        color: '#635BFF', weight: 4, dashArray: '6, 8'
+                    }).addTo(manageMap);
+                    mapLayers.push(line);
+                    manageMap.fitBounds(line.getBounds(), { padding: [25, 25] });
+                });
+        }
+
+        drawManageRoute();
+
+        const popularCities = [
+            { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures"] },
+            { name: "Kolozsvár", lat: 46.7712, lng: 23.6236, alt: ["kolozsvar", "cluj"] },
+            { name: "Brassó", lat: 45.6579, lng: 25.6012, alt: ["brasso", "brasov"] },
+            { name: "Sepsiszentgyörgy", lat: 45.8636, lng: 25.7878, alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
+            { name: "Székelyudvarhely", lat: 46.3053, lng: 25.2936, alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
+            { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] },
+            { name: "Nagyszeben", lat: 45.7983, lng: 24.1256, alt: ["nagyszeben", "sibiu"] },
+            { name: "Barót", lat: 46.0747, lng: 25.6025, alt: ["barot", "baraolt"] },
+            { name: "Farkaslaka", lat: 46.3811, lng: 25.2153, alt: ["farkaslaka", "lupeni"] },
+            { name: "Kézdivásárhely", lat: 46.0000, lng: 26.1383, alt: ["kezdivasarhely", "targu secuiesc"] },
+            { name: "Gyergyószentmiklós", lat: 46.7225, lng: 25.6006, alt: ["gyergyoszentmiklos", "gheorgheni"] }
+        ];
+
+        function normalizeText(text) {
+            if (!text) return "";
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
+        function setupCityAutocomplete(inputId, resultsId, latId, lngId, isOrigin) {
+            const input = document.getElementById(inputId);
+            const resultsDiv = document.getElementById(resultsId);
+            let timer = null;
+
+            function applyCoordinates(lat, lng) {
+                document.getElementById(latId).value = lat;
+                document.getElementById(lngId).value = lng;
+                if (isOrigin) {
+                    currentFromLat = parseFloat(lat);
+                    currentFromLng = parseFloat(lng);
+                } else {
+                    currentToLat = parseFloat(lat);
+                    currentToLng = parseFloat(lng);
+                }
+                drawManageRoute();
+            }
+
+            input.addEventListener('input', function() {
+                clearTimeout(timer);
+                document.getElementById(latId).value = '';
+                document.getElementById(lngId).value = '';
+                const q = normalizeText(this.value);
+
+                if (!q) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                resultsDiv.innerHTML = '';
+                const added = new Set();
+
+                popularCities.filter(c => normalizeText(c.name).includes(q) || c.alt.some(a => a.includes(q))).forEach(c => {
+                    added.add(normalizeText(c.name));
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<span><i class="bi bi-geo-alt-fill text-primary me-2"></i><strong>${c.name}</strong></span><span class="text-muted small">Románia</span>`;
+                    div.onclick = () => {
+                        input.value = c.name;
+                        resultsDiv.style.display = 'none';
+                        applyCoordinates(c.lat, c.lng);
+                    };
+                    resultsDiv.appendChild(div);
+                });
+
+                if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
+
+                if (q.length >= 2) {
+                    timer = setTimeout(() => {
+                        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(input.value.trim())}&bbox=20.2,43.6,29.7,48.3&limit=8`)
+                            .then(r => r.json())
+                            .then(data => {
+                                (data.features || []).forEach(f => {
+                                    const p = f.properties;
+                                    if (p.countrycode && p.countrycode.toLowerCase() !== 'ro') return;
+                                    const name = p.name || p.city || p.town || p.village;
+                                    if (!name || added.has(normalizeText(name))) return;
+                                    added.add(normalizeText(name));
+
+                                    const div = document.createElement('div');
+                                    div.className = 'autocomplete-item';
+                                    div.innerHTML = `<span><i class="bi bi-geo-alt text-secondary me-2"></i><strong>${name}</strong></span><span class="text-muted small">${p.county || 'Románia'}</span>`;
+                                    div.onclick = () => {
+                                        input.value = name;
+                                        resultsDiv.style.display = 'none';
+                                        applyCoordinates(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+                                    };
+                                    resultsDiv.appendChild(div);
+                                });
+                                if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
+                            }).catch(() => {});
+                    }, 150);
+                }
+            });
+
+            input.addEventListener('change', function() {
+                if (!document.getElementById(latId).value && this.value.trim().length >= 2) {
+                    fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(this.value.trim())}&bbox=20.2,43.6,29.7,48.3&limit=1`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.features && data.features.length > 0) {
+                                const coords = data.features[0].geometry.coordinates;
+                                applyCoordinates(coords[1], coords[0]);
+                            }
+                        }).catch(() => {});
+                }
+            });
+
+            document.addEventListener('click', e => {
+                if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        setupCityAutocomplete('from-input', 'from-results', 'from-lat', 'from-lng', true);
+        setupCityAutocomplete('to-input', 'to-results', 'to-lat', 'to-lng', false);
+    </script>
+</body>
+</html>
