@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RIDEWMY - Utak keresése</title>
     
-    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/hu.js"></script>
 
     <style>
         :root {
@@ -52,6 +52,7 @@
             border-radius: var(--card-radius);
             border: none;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            overflow: visible !important;
         }
 
         .figma-input-wrapper {
@@ -78,23 +79,20 @@
             color: #374151;
         }
 
-        .figma-input-wrapper input::placeholder {
-            color: #9CA3AF;
-        }
-
         .autocomplete-results {
             position: absolute;
             top: 105%;
             left: 0;
             right: 0;
             background: #ffffff;
+            border: 1px solid #E5E7EB;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
             max-height: 220px;
             overflow-y: auto;
             display: none;
-            padding: 4px 0;
+            padding: 6px 0;
         }
 
         .autocomplete-item {
@@ -102,7 +100,9 @@
             font-size: 0.85rem;
             cursor: pointer;
             color: #374151;
-            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .autocomplete-item:hover {
@@ -136,11 +136,6 @@
             align-items: center;
             justify-content: center;
             user-select: none;
-            transition: background-color 0.2s;
-        }
-
-        .map-drag-handle:hover, .map-drag-handle.dragging {
-            background-color: #EDE9FE;
         }
 
         .map-drag-handle-bar {
@@ -148,12 +143,6 @@
             height: 4px;
             background-color: #D1D5DB;
             border-radius: 2px;
-            transition: background-color 0.2s;
-        }
-
-        .map-drag-handle:hover .map-drag-handle-bar, 
-        .map-drag-handle.dragging .map-drag-handle-bar {
-            background-color: var(--primary-purple);
         }
 
         .avatar-circle {
@@ -196,7 +185,6 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            text-decoration: none;
         }
 
         .rating-badge i {
@@ -222,14 +210,18 @@
             font-weight: 500;
         }
 
-        .btn-map-preview:hover {
-            background-color: #E5E7EB;
-        }
-
-        .map-hover-popup .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            padding: 4px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        .btn-toggle-expand {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: #ffffff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
         }
 
         .route-option-btn {
@@ -253,65 +245,60 @@
             font-weight: 600;
         }
 
-        .btn-toggle-expand {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: #ffffff;
-            border: 1px solid #E5E7EB;
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #374151;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-        }
-
-        .btn-toggle-expand:hover {
-            background: #EDE9FE;
-            color: var(--primary-purple);
+        .route-live-badge-search {
+            background-color: #EDE9FE;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: #4C1D95;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header / Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
         <div class="container" style="max-width: 800px;">
             <a class="navbar-brand brand-logo fs-3 text-dark" href="/">RIDEWMY</a>
             
             <div class="d-flex align-items-center gap-3">
-                <a href="/" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
+                <a href="/search" class="nav-link fw-bold text-dark fs-6">Utak keresése</a>
                 <a href="/create-ride" class="nav-link fw-medium fs-6 text-muted">Hirdetés feladása</a>
                 
+                {% if session.get('user_name') %}
                 <div class="dropdown">
                     <div class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar-tag">SZ</div>
-                        <span class="fw-semibold small text-dark">Szilárd T.</span>
+                        <div class="user-avatar-tag">{{ session.get('user_name')[:2]|upper }}</div>
+                        <span class="fw-semibold small text-dark">{{ session.get('user_name') }}</span>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profilom</a></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Kijelentkezés</a></li>
                     </ul>
                 </div>
+                {% else %}
+                <a href="/register" class="nav-link fw-medium fs-6 text-muted">Regisztráció</a>
+                <a href="/login" class="btn btn-purple px-4 py-2 text-decoration-none fs-6">Bejelentkezés</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-    <!-- Fő tartalom -->
     <div class="container py-4" style="max-width: 800px;">
         
-        <!-- Kereső kártya -->
-        <div class="card card-custom p-4 mb-3" style="overflow: visible;">
+        <div class="card card-custom p-4 mb-3">
             <h3 class="font-bagel text-center mb-4">Hova szeretnél utazni?</h3>
             
-            <form id="search-form" class="row g-2 align-items-center">
+            <form action="/search" method="GET" id="search-form" class="row g-2 align-items-center">
                 <div class="col-md-3">
                     <div class="figma-input-wrapper">
                         <i class="bi bi-geo-alt"></i>
-                        <input type="text" id="from-input" placeholder="Honnan?" autocomplete="off">
+                        <input type="text" id="from-input" name="from" placeholder="Honnan?" autocomplete="off" value="{{ request.args.get('from', '') }}">
                         <div id="from-results" class="autocomplete-results"></div>
                     </div>
                 </div>
@@ -319,23 +306,25 @@
                 <div class="col-md-3">
                     <div class="figma-input-wrapper">
                         <i class="bi bi-geo-alt"></i>
-                        <input type="text" id="to-input" placeholder="Hová?" autocomplete="off">
+                        <input type="text" id="to-input" name="to" placeholder="Hová?" autocomplete="off" value="{{ request.args.get('to', '') }}">
                         <div id="to-results" class="autocomplete-results"></div>
                     </div>
                 </div>
 
                 <div class="col-md-2">
                     <div class="figma-input-wrapper">
-                        <i class="bi bi-calendar"></i>
-                        <input type="text" onfocus="(this.type='date')" onblur="(this.type='text')" id="date-input" placeholder="Dátum">
+                        <i class="bi bi-calendar text-primary"></i>
+                        <input type="text" id="date-input" name="date" placeholder="Dátum" autocomplete="off" value="{{ request.args.get('date', '') }}" readonly>
                     </div>
                 </div>
+
                 <div class="col-md-2">
                     <div class="figma-input-wrapper">
-                        <i class="bi bi-people"></i>
-                        <input type="text" placeholder="Utasok">
+                        <i class="bi bi-people text-primary"></i>
+                        <input type="number" name="seats" min="1" max="8" placeholder="Utasok" value="{{ request.args.get('seats', '') }}">
                     </div>
                 </div>
+
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-purple w-100">
                         <i class="bi bi-search me-1"></i> Keresés
@@ -344,7 +333,6 @@
             </form>
         </div>
 
-        <!-- Térkép Kártya -->
         <div class="card card-custom p-0 mb-4 overflow-hidden">
             <div id="map-wrapper" class="map-wrapper">
                 <button id="toggle-expand-btn" class="btn btn-toggle-expand">
@@ -355,51 +343,51 @@
             <div id="map-drag-handle" class="map-drag-handle" title="Húzd a magasság módosításához">
                 <div class="map-drag-handle-bar"></div>
             </div>
+
+            <div id="search-route-live-info" class="route-live-badge-search d-none m-3">
+                <div><i class="bi bi-clock-history me-1"></i> Menetidő: <strong id="search-info-duration">-</strong></div>
+                <div><i class="bi bi-signpost-split me-1"></i> Távolság: <strong id="search-info-distance">-</strong></div>
+                <div><i class="bi bi-flag me-1"></i> Érkezés: <strong id="search-info-arrival">-</strong></div>
+            </div>
         </div>
 
-        <!-- Utak lista -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="font-bagel m-0">Elérhető utak</h4>
-            <button id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted d-none">
+            <a href="/search" id="reset-btn" class="btn btn-sm btn-link text-decoration-none text-muted {% if not request.args.get('from') and not request.args.get('to') and not request.args.get('date') and not request.args.get('seats') %}d-none{% endif %}">
                 <i class="bi bi-x-circle me-1"></i> Szűrők törlése
-            </button>
+            </a>
         </div>
 
-        <div id="rides-container" class="d-flex flex-column gap-3">
-            <!-- Dinamikus kártyák -->
-        </div>
+        <div id="rides-container" class="d-flex flex-column gap-3"></div>
 
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
+        flatpickr("#date-input", {
+            dateFormat: "Y-m-d",
+            locale: "hu",
+            onChange: function() {
+                updateSearchLiveRoute();
+            }
+        });
+
         const popularCities = [
-            { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures", "targu-mures"] },
-            { name: "Kolozsvár", lat: 46.7712, lng: 23.6236, alt: ["kolozsvar", "cluj", "cluj-napoca"] },
+            { name: "Barót", lat: 46.0747, lng: 25.6025, alt: ["barot", "baraolt"] },
+            { name: "Farkaslaka", lat: 46.3811, lng: 25.2153, alt: ["farkaslaka", "lupeni"] },
+            { name: "Marosvásárhely", lat: 46.5425, lng: 24.5575, alt: ["marosvasarhely", "targu mures"] },
+            { name: "Kolozsvár", lat: 46.7712, lng: 23.6236, alt: ["kolozsvar", "cluj"] },
             { name: "Brassó", lat: 45.6579, lng: 25.6012, alt: ["brasso", "brasov"] },
             { name: "Nagyszeben", lat: 45.7983, lng: 24.1256, alt: ["nagyszeben", "sibiu"] },
             { name: "Sepsiszentgyörgy", lat: 45.8636, lng: 25.7878, alt: ["sepsiszentgyorgy", "sfantu gheorghe"] },
             { name: "Székelyudvarhely", lat: 46.3053, lng: 25.2936, alt: ["szekelyudvarhely", "odorheiu secuiesc"] },
             { name: "Csíkszereda", lat: 46.3606, lng: 25.8016, alt: ["csikszereda", "miercurea ciuc"] },
-            { name: "Gyergyószentmiklós", lat: 46.7231, lng: 25.5919, alt: ["gyergyoszentmiklos", "gheorgheni"] },
-            { name: "Kézdivásárhely", lat: 46.0000, lng: 26.1333, alt: ["kezdivasarhely", "targu secuiesc"] },
-            { name: "Nagyvárad", lat: 47.0522, lng: 21.9211, alt: ["nagyvarad", "oradea"] },
-            { name: "Arad", lat: 46.1866, lng: 21.3123, alt: ["arad"] },
-            { name: "Temesvár", lat: 45.7537, lng: 21.2257, alt: ["temesvar", "timisoara"] },
-            { name: "Bukarest", lat: 44.4323, lng: 26.1063, alt: ["bukarest", "bucuresti"] }
+            { name: "Bacău", lat: 46.5670, lng: 26.9140, alt: ["bacau"] }
         ];
 
-        let rides = {{ rides | tojson if rides is defined else '[]' }};
-        if (!rides || rides.length === 0) {
-            rides = [
-                { id: 1, driver: "Szilárd T.", rating: "4.9", from: "Marosvásárhely", to: "Kolozsvár", price: "35 RON", seats: "2 szabad hely", startTime: "08:00", endTime: "10:15", fromLat: 46.5425, fromLng: 24.5575, toLat: 46.7712, toLng: 23.6236 },
-                { id: 2, driver: "Eszter K.", rating: "5.0", from: "Brassó", to: "Sepsiszentgyörgy", price: "25 RON", seats: "3 szabad hely", startTime: "14:30", endTime: "15:15", fromLat: 45.6579, fromLng: 25.6012, toLat: 45.8636, toLng: 25.7878 },
-                { id: 3, driver: "Attila N.", rating: "4.8", from: "Székelyudvarhely", to: "Csíkszereda", price: "30 RON", seats: "1 szabad hely", startTime: "11:00", endTime: "12:00", fromLat: 46.3053, fromLng: 25.2936, toLat: 46.3606, toLng: 25.8016 }
-            ];
-        }
+        let currentRidesData = {{ rides | tojson if rides is defined else '[]' }};
 
         const map = L.map('map', { zoomControl: true }).setView([46.4, 24.8], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -407,7 +395,7 @@
         }).addTo(map);
 
         let activeCityMarkers = [];
-        let currentActiveRoute = [];
+        let currentActiveRouteElements = [];
 
         const mapWrapper = document.getElementById('map-wrapper');
         const dragHandle = document.getElementById('map-drag-handle');
@@ -436,15 +424,12 @@
 
         document.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
-            
             const deltaY = e.clientY - startY;
             let newHeight = startHeight + deltaY;
-
             if (newHeight < 180) newHeight = 180;
             if (newHeight > 550) newHeight = 550;
 
             mapWrapper.style.height = `${newHeight}px`;
-            
             updateExpandButtonState(newHeight);
             map.invalidateSize();
         });
@@ -460,99 +445,78 @@
 
         toggleExpandBtn.addEventListener('click', function() {
             const currentH = mapWrapper.offsetHeight;
-            let targetH = 200;
-
-            if (currentH < 300) {
-                targetH = 420;
-            } else {
-                targetH = 200;
-            }
-
+            let targetH = currentH < 300 ? 420 : 200;
             mapWrapper.style.height = `${targetH}px`;
             updateExpandButtonState(targetH);
-
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 200);
+            setTimeout(() => { map.invalidateSize(); }, 200);
         });
 
         function normalizeText(text) {
-            return text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+            if (!text) return "";
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ț/g, "t").replace(/Ț/g, "t").replace(/ș/g, "s").replace(/Ș/g, "s").replace(/ă/g, "a").replace(/Ă/g, "a").replace(/î/g, "i").replace(/Î/g, "i").replace(/â/g, "a").replace(/Â/g, "a").toLowerCase().trim();
         }
 
-        function clearMap() {
+        function clearAllMapElements() {
             activeCityMarkers.forEach(m => map.removeLayer(m));
             activeCityMarkers = [];
             clearActiveRoute();
         }
 
         function clearActiveRoute() {
-            currentActiveRoute.forEach(el => map.removeLayer(el));
-            currentActiveRoute = [];
+            currentActiveRouteElements.forEach(el => map.removeLayer(el));
+            currentActiveRouteElements = [];
         }
 
         function fitMapBoundsSmart(group) {
-            map.fitBounds(group.getBounds(), { 
-                padding: [50, 50],
-                maxZoom: 9
-            });
+            map.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 9 });
         }
 
-        function resetMapToDefault() {
-            clearActiveRoute();
-            activeCityMarkers.forEach(m => {
-                if (!map.hasLayer(m)) {
-                    m.addTo(map);
-                }
-            });
-
-            if (activeCityMarkers.length > 0) {
-                const group = L.featureGroup(activeCityMarkers);
-                fitMapBoundsSmart(group);
-            } else {
-                map.setView([46.4, 24.8], 7);
-            }
+        function formatDuration(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return hrs > 0 ? (mins > 0 ? `${hrs} óra ${mins} perc` : `${hrs} óra`) : `${mins} perc`;
         }
 
-        function renderRides(data) {
+        function renderRidesCardsOnly(data) {
             const container = document.getElementById('rides-container');
             container.innerHTML = '';
-            clearMap();
 
             if (data.length === 0) {
-                container.innerHTML = `
-                    <div class="card card-custom p-4 text-center text-muted">
-                        <i class="bi bi-emoji-frown fs-2 mb-2"></i>
-                        <p class="m-0">Sajnos nem található a keresésnek megfelelő út.</p>
-                    </div>`;
+                container.innerHTML = `<div class="card card-custom p-4 text-center text-muted"><i class="bi bi-emoji-frown fs-2 mb-2"></i><p class="m-0">Sajnos nem található a keresésnek megfelelő út.</p></div>`;
                 return;
             }
-
-            const cityGroups = {};
 
             data.forEach((ride) => {
                 const card = document.createElement('div');
                 card.className = 'card card-custom p-3';
+
+                const durationBadge = ride.duration ? `<span class="badge bg-light text-primary border border-primary-subtle fw-medium me-1"><i class="bi bi-clock me-1"></i>${ride.duration}</span>` : '';
+                const distanceBadge = ride.distance ? `<span class="badge bg-light text-secondary border fw-medium"><i class="bi bi-signpost-split me-1"></i>${ride.distance}</span>` : '';
+                const carBadge = ride.car ? `<span class="badge bg-light text-dark border ms-1 fw-medium">🚘 ${ride.car}</span>` : '';
+
                 card.innerHTML = `
                     <div class="row align-items-center">
-                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 150px;">
-                            <div class="avatar-circle"></div>
+                        <div class="col-auto d-flex align-items-center gap-3" style="min-width: 160px;">
+                            <div class="avatar-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-fill text-secondary fs-3"></i>
+                            </div>
                             <div>
                                 <div class="fw-bold text-dark small">${ride.driver}</div>
-                                <a href="/reviews" class="rating-badge mt-1">
-                                    <i class="bi bi-star"></i> ${ride.rating}
-                                </a>
+                                <span class="rating-badge mt-1"><i class="bi bi-star-fill"></i> ${ride.rating}</span>
                             </div>
                         </div>
 
                         <div class="col px-4">
                             <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
-                                <i class="bi bi-clock"></i>
-                                <span>${ride.startTime} &rarr; ${ride.endTime}</span>
+                                <i class="bi bi-calendar-event text-primary"></i>
+                                <span class="fw-medium">${ride.startTime}</span>
+                                <span class="text-purple fw-bold ms-1">(${ride.startHour} &rarr; ${ride.endTime})</span>
+                                ${carBadge}
                             </div>
-                            <div class="d-flex align-items-center gap-2 mb-2 fw-medium text-dark small">
-                                <i class="bi bi-geo-alt text-muted"></i>
-                                <span>${ride.from} &rarr; ${ride.to}</span>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="fw-bold text-dark small"><i class="bi bi-geo-alt text-muted me-1"></i>${ride.from} &rarr; ${ride.to}</span>
+                                ${durationBadge}
+                                ${distanceBadge}
                             </div>
                             <div>
                                 <button class="btn btn-map-preview btn-preview-action">
@@ -564,41 +528,143 @@
                         <div class="col-auto text-end">
                             <span class="badge badge-seats mb-2 d-inline-block">${ride.seats}</span>
                             <div class="fs-5 fw-bold text-dark mb-2">${ride.price} <span class="fs-6 fw-normal text-muted">/ fő</span></div>
-                            <a href="#" class="btn btn-purple px-4 py-2 text-decoration-none fs-6">Részletek</a>
+                            <a href="/ride/${ride.id}" class="btn btn-purple px-4 py-2 text-decoration-none fs-6 d-inline-block">Foglalás</a>
                         </div>
                     </div>`;
 
                 container.appendChild(card);
 
-                const fLat = ride.fromLat;
-                const fLng = ride.fromLng;
-                const tLat = ride.toLat;
-                const tLng = ride.toLng;
-
-                if (fLat && fLng) {
-                    const rideInfo = {
-                        driver: ride.driver,
-                        from: ride.from,
-                        to: ride.to,
-                        fLat, fLng, tLat, tLng
-                    };
-
-                    if (!cityGroups[ride.from]) {
-                        cityGroups[ride.from] = {
-                            lat: fLat,
-                            lng: fLng,
-                            cityName: ride.from,
-                            rides: []
-                        };
-                    }
-                    cityGroups[ride.from].rides.push(rideInfo);
-                }
-
                 card.querySelector('.btn-preview-action').addEventListener('click', () => {
-                    if (fLat && fLng && tLat && tLng) {
-                        focusRideRoute(fLat, fLng, tLat, tLng, ride.from, ride.to);
+                    if (ride.fromLat && ride.fromLng && ride.toLat && ride.toLng) {
+                        focusRideRoute(ride.fromLat, ride.fromLng, ride.toLat, ride.toLng, ride.from, ride.to);
                     }
                 });
+            });
+        }
+
+        window.selectRouteFromPopup = function(fLat, fLng, tLat, tLng, fromName, toName) {
+            map.closePopup();
+            focusRideRoute(parseFloat(fLat), parseFloat(fLng), parseFloat(tLat), parseFloat(tLng), fromName, toName);
+        };
+
+        function focusRideRoute(fLat, fLng, tLat, tLng, fromName, toName) {
+            clearAllMapElements();
+
+            const filteredRides = currentRidesData.filter(r => r.from === fromName && r.to === toName);
+            renderRidesCardsOnly(filteredRides.length > 0 ? filteredRides : currentRidesData);
+
+            const startMarker = L.marker([fLat, fLng]).addTo(map);
+            const endMarker = L.marker([tLat, tLng]).addTo(map);
+            
+            currentActiveRouteElements.push(startMarker, endMarker);
+
+            const endPopup = L.popup({ closeButton: true, autoClose: false })
+                .setContent(`<b>${toName}</b> (Érkezés)`);
+            
+            endMarker.bindPopup(endPopup);
+
+            endMarker.on('popupclose', function() {
+                resetMapToDefault();
+            });
+
+            fetch(`https://router.project-osrm.org/route/v1/driving/${fLng},${fLat};${tLng},${tLat}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(osrmData => {
+                    let routeLayer;
+                    if (osrmData.routes && osrmData.routes.length > 0) {
+                        routeLayer = L.geoJSON(osrmData.routes[0].geometry, {
+                            style: { color: '#635BFF', weight: 4, opacity: 0.85 }
+                        }).addTo(map);
+                    } else {
+                        routeLayer = L.polyline([[fLat, fLng], [tLat, tLng]], {
+                            color: '#635BFF', weight: 4, dashArray: '6, 8'
+                        }).addTo(map);
+                    }
+                    
+                    currentActiveRouteElements.push(routeLayer);
+                    endMarker.openPopup();
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                })
+                .catch(() => {
+                    const routeLayer = L.polyline([[fLat, fLng], [tLat, tLng]], {
+                        color: '#635BFF', weight: 4, dashArray: '6, 8'
+                    }).addTo(map);
+                    
+                    currentActiveRouteElements.push(routeLayer);
+                    endMarker.openPopup();
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                });
+        }
+
+        function resetMapToDefault() {
+            clearActiveRoute();
+            renderRides(currentRidesData);
+        }
+
+        function updateSearchLiveRoute() {
+            const fromVal = document.getElementById('from-input').value.trim();
+            const toVal = document.getElementById('to-input').value.trim();
+            const dateVal = document.getElementById('date-input').value.trim();
+
+            if (!fromVal || !toVal) {
+                document.getElementById('search-route-live-info').classList.add('d-none');
+                return;
+            }
+
+            Promise.all([
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(fromVal)}&bbox=20.2,43.6,29.7,48.3&limit=5`).then(r=>r.json()),
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(toVal)}&bbox=20.2,43.6,29.7,48.3&limit=5`).then(r=>r.json())
+            ]).then(([fromData, toData]) => {
+                const validFrom = fromData && fromData.features ? fromData.features.find(f => !f.properties.countrycode || f.properties.countrycode.toLowerCase() === 'ro') : null;
+                const validTo = toData && toData.features ? toData.features.find(f => !f.properties.countrycode || f.properties.countrycode.toLowerCase() === 'ro') : null;
+
+                if (validFrom && validTo) {
+                    const fCoords = validFrom.geometry.coordinates;
+                    const tCoords = validTo.geometry.coordinates;
+
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${fCoords[0]},${fCoords[1]};${tCoords[0]},${tCoords[1]}?overview=false`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.routes && data.routes.length > 0) {
+                                const route = data.routes[0];
+                                const minutes = Math.round(route.duration / 60);
+                                const km = Math.round(route.distance / 1000);
+
+                                document.getElementById('search-info-duration').innerText = formatDuration(minutes);
+                                document.getElementById('search-info-distance').innerText = `${km} km`;
+
+                                if (dateVal) {
+                                    const depDate = new Date(dateVal + 'T10:00:00');
+                                    const arrDate = new Date(depDate.getTime() + minutes * 60000);
+                                    const h = String(arrDate.getHours()).padStart(2, '0');
+                                    const m = String(arrDate.getMinutes()).padStart(2, '0');
+                                    document.getElementById('search-info-arrival').innerText = `${h}:${m}`;
+                                } else {
+                                    document.getElementById('search-info-arrival').innerText = '-';
+                                }
+
+                                document.getElementById('search-route-live-info').classList.remove('d-none');
+                            }
+                        }).catch(()=>{});
+                }
+            }).catch(()=>{});
+        }
+
+        function renderRides(data) {
+            clearAllMapElements();
+            renderRidesCardsOnly(data);
+
+            if (data.length === 0) return;
+
+            const cityGroups = {};
+
+            data.forEach((ride) => {
+                if (ride.fromLat && ride.fromLng) {
+                    if (!cityGroups[ride.from]) {
+                        cityGroups[ride.from] = { lat: ride.fromLat, lng: ride.fromLng, cityName: ride.from, rides: [] };
+                    }
+                    cityGroups[ride.from].rides.push(ride);
+                }
             });
 
             Object.keys(cityGroups).forEach(cityName => {
@@ -613,133 +679,101 @@
 
                 group.rides.forEach((r) => {
                     popupContent += `
-                        <button class="route-option-btn" onclick="selectRouteFromPopup('${r.fLat}', '${r.fLng}', '${r.tLat}', '${r.tLng}', '${r.from}', '${r.to}')">
+                        <button class="route-option-btn" onclick="window.selectRouteFromPopup('${r.fromLat}', '${r.fromLng}', '${r.toLat}', '${r.toLng}', '${r.from}', '${r.to}')">
                             &rarr; <strong>${r.to}</strong> <span style="color:#6B7280;">(${r.driver})</span>
                         </button>`;
                 });
 
                 popupContent += `</div>`;
 
-                const popup = L.popup({
-                    className: 'map-hover-popup',
-                    closeButton: false,
-                    offset: [0, -20]
-                }).setContent(popupContent);
-
-                marker.on('mouseover', function() {
-                    this.bindPopup(popup).openPopup();
-                });
-
+                const popup = L.popup({ className: 'map-hover-popup', closeButton: false, offset: [0, -20] }).setContent(popupContent);
+                marker.on('mouseover', function() { this.bindPopup(popup).openPopup(); });
                 activeCityMarkers.push(marker);
             });
 
             if (activeCityMarkers.length > 0) {
-                const group = L.featureGroup(activeCityMarkers);
-                fitMapBoundsSmart(group);
+                fitMapBoundsSmart(L.featureGroup(activeCityMarkers));
             }
         }
-
-        window.selectRouteFromPopup = function(fLat, fLng, tLat, tLng, fromName, toName) {
-            focusRideRoute(parseFloat(fLat), parseFloat(fLng), parseFloat(tLat), parseFloat(tLng), fromName, toName);
-        };
-
-        function focusRideRoute(fLat, fLng, tLat, tLng, fromName, toName) {
-            clearActiveRoute();
-
-            activeCityMarkers.forEach(m => map.removeLayer(m));
-
-            const startMarker = L.marker([fLat, fLng]).addTo(map);
-
-            const polyline = L.polyline([[fLat, fLng], [tLat, tLng]], {
-                color: '#635BFF',
-                weight: 4,
-                dashArray: '6, 8'
-            }).addTo(map);
-
-            const endMarker = L.marker([tLat, tLng]).addTo(map);
-            const popup = L.popup({ closeOnClick: false })
-                .setContent(`<b>${toName}</b> (Érkezés)`);
-            
-            endMarker.bindPopup(popup).openPopup();
-
-            map.once('popupclose', function() {
-                resetMapToDefault();
-            });
-
-            currentActiveRoute.push(startMarker, polyline, endMarker);
-
-            map.fitBounds(polyline.getBounds(), {
-                padding: [50, 50],
-                maxZoom: 9
-            });
-        }
-
-        renderRides(rides);
 
         function setupFastAutocomplete(inputId, resultsId) {
             const input = document.getElementById(inputId);
             const resultsDiv = document.getElementById(resultsId);
-            let apiTimeout = null;
+            let debounceTimer = null;
+
+            if (!input || !resultsDiv) return;
 
             input.addEventListener('input', function() {
-                clearTimeout(apiTimeout);
+                clearTimeout(debounceTimer);
                 const queryRaw = this.value.trim();
                 const queryNorm = normalizeText(queryRaw);
+                updateSearchLiveRoute();
 
                 if (queryNorm.length < 1) {
                     resultsDiv.style.display = 'none';
+                    resultsDiv.innerHTML = '';
                     return;
                 }
 
                 const localMatches = popularCities.filter(c => {
                     const nameNorm = normalizeText(c.name);
-                    const matchName = nameNorm.includes(queryNorm);
-                    const matchAlt = c.alt.some(a => normalizeText(a).includes(queryNorm));
-                    return matchName || matchAlt;
+                    return nameNorm.includes(queryNorm) || (c.alt && c.alt.some(a => normalizeText(a).includes(queryNorm)));
                 });
 
+                const addedNames = new Set();
                 resultsDiv.innerHTML = '';
 
                 localMatches.forEach(item => {
+                    addedNames.add(normalizeText(item.name));
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'autocomplete-item';
-                    itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-primary"></i><strong>${item.name}</strong>`;
-                    itemDiv.addEventListener('click', function() {
+                    itemDiv.innerHTML = `<div><i class="bi bi-geo-alt-fill me-2 text-primary"></i><strong>${item.name}</strong></div><span class="text-muted small">Románia</span>`;
+                    itemDiv.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         input.value = item.name;
                         resultsDiv.style.display = 'none';
+                        updateSearchLiveRoute();
                     });
                     resultsDiv.appendChild(itemDiv);
                 });
 
-                if (localMatches.length > 0) {
-                    resultsDiv.style.display = 'block';
-                }
+                if (localMatches.length > 0) resultsDiv.style.display = 'block';
 
-                if (queryNorm.length >= 3) {
-                    apiTimeout = setTimeout(() => {
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryRaw)}&countrycodes=ro&addressdetails=1&limit=5`)
+                if (queryNorm.length >= 2) {
+                    debounceTimer = setTimeout(() => {
+                        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(queryRaw)}&bbox=20.2,43.6,29.7,48.3&limit=10`)
                             .then(res => res.json())
                             .then(data => {
-                                data.forEach(apiItem => {
-                                    const cityName = apiItem.address.city || apiItem.address.town || apiItem.address.village || apiItem.name;
-                                    const alreadyListed = localMatches.some(m => normalizeText(m.name) === normalizeText(cityName));
-                                    if (!alreadyListed && cityName) {
-                                        const itemDiv = document.createElement('div');
-                                        itemDiv.className = 'autocomplete-item';
-                                        itemDiv.innerHTML = `<i class="bi bi-geo-alt me-2 text-muted"></i><strong>${cityName}</strong>`;
-                                        itemDiv.addEventListener('click', function() {
-                                            input.value = cityName;
-                                            resultsDiv.style.display = 'none';
-                                        });
-                                        resultsDiv.appendChild(itemDiv);
-                                    }
-                                });
-                                if (resultsDiv.children.length > 0) {
-                                    resultsDiv.style.display = 'block';
+                                if (data && data.features && data.features.length > 0) {
+                                    data.features.forEach(feat => {
+                                        const props = feat.properties;
+                                        if (props.countrycode && props.countrycode.toLowerCase() !== 'ro') return;
+                                        if (props.country && !['romania', 'românia'].includes(props.country.toLowerCase())) return;
+
+                                        const cityName = props.name || props.city || props.town || props.village;
+                                        if (!cityName) return;
+
+                                        const cityNorm = normalizeText(cityName);
+                                        if (!addedNames.has(cityNorm)) {
+                                            addedNames.add(cityNorm);
+                                            const county = props.county || props.state || 'Románia';
+
+                                            const itemDiv = document.createElement('div');
+                                            itemDiv.className = 'autocomplete-item';
+                                            itemDiv.innerHTML = `<div><i class="bi bi-geo-alt me-2 text-secondary"></i><strong>${cityName}</strong></div><span class="text-muted small">${county}</span>`;
+                                            itemDiv.addEventListener('click', function(e) {
+                                                e.stopPropagation();
+                                                input.value = cityName;
+                                                resultsDiv.style.display = 'none';
+                                                updateSearchLiveRoute();
+                                            });
+                                            resultsDiv.appendChild(itemDiv);
+                                        }
+                                    });
+                                    if (resultsDiv.children.length > 0) resultsDiv.style.display = 'block';
                                 }
-                            })
-                            .catch(() => {});
-                    }, 200);
+                            }).catch(() => {});
+                    }, 100);
                 }
             });
 
@@ -753,31 +787,7 @@
         setupFastAutocomplete('from-input', 'from-results');
         setupFastAutocomplete('to-input', 'to-results');
 
-        document.getElementById('search-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const fromVal = normalizeText(document.getElementById('from-input').value);
-            const toVal = normalizeText(document.getElementById('to-input').value);
-
-            const filtered = rides.filter(ride => {
-                const rideFromNorm = normalizeText(ride.from);
-                const rideToNorm = normalizeText(ride.to);
-
-                const matchFrom = !fromVal || rideFromNorm.includes(fromVal);
-                const matchTo = !toVal || rideToNorm.includes(toVal);
-                return matchFrom && matchTo;
-            });
-
-            renderRides(filtered);
-            document.getElementById('reset-btn').classList.remove('d-none');
-        });
-
-        document.getElementById('reset-btn').addEventListener('click', function() {
-            document.getElementById('from-input').value = '';
-            document.getElementById('to-input').value = '';
-            document.getElementById('date-input').value = '';
-            this.classList.add('d-none');
-            renderRides(rides);
-        });
+        renderRides(currentRidesData);
     </script>
 </body>
 </html>

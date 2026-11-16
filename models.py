@@ -20,11 +20,11 @@ class User(db.Model):
         self.email = email
         self.set_password(password_hash) 
 
-    def set_password(self, password_hash):
-        self.password_hash = generate_password_hash(password_hash)
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password_hash):
-        return check_password_hash(self.password_hash, password_hash)
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class Car(db.Model):
@@ -47,6 +47,8 @@ class Trip(db.Model):
     trip_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     driver_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'))
     car_id = db.Column(db.Integer, db.ForeignKey('cars.car_id', ondelete='CASCADE'))
+    start_city = db.Column(db.String(100), default='Kiindulás')
+    destination_city = db.Column(db.String(100), default='Úticél')
     start_latitude = db.Column(db.Numeric(10, 8))
     start_longitude = db.Column(db.Numeric(11, 8))
     destination_latitude = db.Column(db.Numeric(10, 8))
@@ -70,10 +72,7 @@ class Booking(db.Model):
     creatid_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
 
     def get_status_text(self):
-        if self.booking_status:
-            return "Aktív foglalás"
-        else:
-            return "Törölt / Inaktív"
+        return "Aktív foglalás" if self.booking_status else "Törölt / Inaktív"
     
     reviews = db.relationship('Review', backref='booking', cascade='all, delete-orphan')
 
