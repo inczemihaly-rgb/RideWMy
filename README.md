@@ -1,72 +1,97 @@
-# 🚗 RideWMy – Olcsó és kényelmes utazás Erdélyben
+<div align="center">
 
-A **RideWMy** egy Flask-alapú, modern telekocsi webalkalmazás, amely megkönnyíti az erdélyi városok közötti utazást. Az alkalmazás Figma dizájn alapján készült, interaktív térképes keresővel, automata útvonal- és menetidő-kalkulációval, teljes körű profil- és hirdetéskezeléssel, valamint dinamikus foglalási és értesítési rendszerrel rendelkezik.
+# 🚗 RideWMy
+### Olcsó és kényelmes telekocsi-megoldás Erdélyben
+
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-Web_Framework-000000?style=for-the-badge&logo=flask&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-XAMPP-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-OpenStreetMap-199900?style=for-the-badge&logo=leaflet&logoColor=white)
+
+<p align="center">
+  <a href="#-főbb-funkciók">Főbb funkciók</a> •
+  <a href="#-oldalak-és-végpontok">Oldalak</a> •
+  <a href="#️-technológiai-stakk">Technológiák</a> •
+  <a href="#-projekt-felépítése">Projekt felépítése</a> •
+  <a href="#-telepítés-és-futtatás">Telepítés</a>
+</p>
+
+</div>
+
+---
+
+## 📖 Áttekintés
+
+A **RideWMy** egy Flask-alapú, modern telekocsi webalkalmazás, amely az erdélyi városok közötti utazást teszi gyorsabbá, olcsóbbá és átláthatóbbá. Az alkalmazás Figma dizájn alapján készült, és valós idejű térképes útvonaltervezéssel, automata menetidő-kalkulációval, teljes körű sofőr- és utasoldali kezelőfelülettel, valamint azonnali jelentkezési értesítésekkel működik.
 
 ---
 
 ## ✨ Főbb funkciók
 
-- 🏠 **Főoldal (`/`)**:
-  - Figma-alapú, letisztult kezdőlap gyorskereső sávval.
-  - **Közelgő népszerű utazások**: 3 véletlenszerűen kiválasztott, szabad hellyel rendelkező út megjelenítése egységesített kártyamagassággal (hosszú helyszínnevek esetén sem csúsznak el az árak és a gombok).
-  - Automatikus település-autokiegészítés (Photon API + Nominatim API + erdélyi gyorsítótár).
+### 🧭 Utazáskeresés és térképes tervezés
+* **Gyorskereső és kiemelt utak (`/`)**: Letisztult kezdőlap gyors település-autokiegészítéssel, valamint 3 véletlenszerűen ajánlott, szabad hellyel rendelkező úttal — egységes kártyamagassággal hosszú helyszínnevek esetén is.
+* **Interaktív térképes kereső (`/search`)**: Leaflet.js térkép csoportosított indulási jelölőkkel, húzható magasságállítással és egykattintásos nagyítással.
+* **Élő OSRM kalkuláció**: Automatikus útvonalrajzolás, távolság-, menetidő- és várható érkezési idő számítás.
+* **Intelligens szűrés**: Szűrés indulási/érkezési város, dátum és szabad helyek száma alapján. A betelt utak (`0 szabad hely`) automatikusan rejtve maradnak a listákban, a saját hirdetéseknél pedig *„Részletek”* gomb jelenik meg.
 
-- 🗺️ **Interaktív kereső és szűrő (`/search`)**:
-  - Térképes megjelenítés Leaflet.js segítségével, csoportosított indulási jelölőkkel és útvonal-előnézettel.
-  - Egyedi magasságméretezés (húzható fogantyúval átméretezhető és egy kattintással nagyítható/kicsinyíthető térkép).
-  - Élő menetidő-, távolság- és érkezési idő kalkuláció az OSRM API használatával.
-  - Szűrés indulás, érkezés, dátum és szabad helyek száma szerint.
-  - **Intelligens szűrés és saját utak kezelése**: A betelt utak (`available_seats == 0`) automatikusan elrejtőznek a keresőből és a főoldalról; a felhasználó saját hirdetéseinél pedig *„Foglalás”* helyett *„Részletek”* gomb jelenik meg.
+### 🚘 Foglalás és hirdetésfeladás
+* **Részletes útvonalnézet (`/ride/<id>`)**: Idővonal pontos indulási és érkezési adatokkal, térképes előnézettel, járműadatokkal, utazási feltételekkel és **dinamikus árkalkulátorral**.
+* **Új út meghirdetése (`/create-ride`)**: Meglévő saját autó kiválasztása vagy új jármű rögzítése, élő útvonal-előnézettel és múltbéli dátumok tiltásával (`minDate: "today"`).
 
-- 🚘 **Utazás részletei & Foglalás (`/ride/<trip_id>`)**:
-  - Részletes idővonal pontos indulási és érkezési időkkel, útvonal-előnézeti térképpel.
-  - Sofőr adatai, értékelések, gépjármű leírása és utazási feltételek (nem dohányzó, csomagméret).
-  - **Dinamikus árkalkulátor**: A kiválasztott helyek számának megfelelően azonnali összegszámítás.
-  - Betelt utak esetén automatikus **„Betelt”** státusz jelzése és a foglalás letiltása, saját hirdetés megnyitásakor pedig közvetlen átirányítás a szerkesztőfelületre.
+### 👤 Profil, hirdetéskezelés és értesítések
+* **Globális értesítési jelvény**: Ha bármelyik meghirdetett útra új jelentkezés érkezett, minden oldal felső navigációs sávjában megjelenik egy figyelmeztető jelvény (`X jelentkező`).
+* **Saját profil és gyors jóváhagyás (`/profile`)**: Személyes és autóadatok szerkesztése vagy törlése, fülekre bontott utazáslista (*Közelgő*, *Korábbi*, *Meghirdetett utak*), valamint **azonnali elfogadás/elutasítás** közvetlenül a profiloldalról.
+* **Utazás szerkesztése (`/manage-ride/<id>`)**: Meghirdetett utak adatainak módosítása élő térképes frissítéssel, út törlése, jelentkező utasok elbírálása és a megerősített utasok telefonszámának megtekintése.
+* **Értékelési rendszer (`/reviews`)**: Csillagos értékelés és szöveges visszajelzés a lezajlott utazások után.
 
-- ➕ **Út meghirdetése (`/create-ride`)**:
-  - Meglévő jármű kiválasztása vagy új autó hozzáadása egyéni adatokkal (márka, modell, szín, rendszám).
-  - Térképes útvonal előnézet és menetidő-számítás a pontok megadásakor.
-  - Szigorú dátumkezelés: a múltbéli dátumok tiltva vannak (`minDate: "today"`), és a rendszer nem enged dátum nélkül hirdetést feladni.
+---
 
-- 👤 **Saját profil & Gyors jóváhagyás (`/profile`)**:
-  - Felhasználói adatok (név, e-mail, telefonszám, értékelési átlag) és elsődleges autó adatainak megjelenítése.
-  - **Profil szerkesztése és törlése**: Modális ablakon keresztül módosítható a név, telefonszám és autóadatok, valamint véglegesen törölhető a felhasználói fiók.
-  - **Gyors jóváhagyás**: Ha egy meghirdetett útra új jelentkező érkezett, az *Utazásaim* fülek fölött automatikusan megjelenik a **Beérkezett jelentkezések** doboz, ahol egyetlen kattintással elfogadható vagy elutasítható a foglalás (ha nincs függőben lévő jelentkezés, a doboz rejtve marad).
-  - **Utazásaim fülek**: Átlátható bontás *Közelgő utak*, *Korábbi utak* és *Meghirdetett utak* között (a jelentkezésekkel rendelkező saját hirdetések automatikusan előre sorolódnak).
+## 🗺️ Oldalak és végpontok
 
-- ⚙️ **Saját utazás kezelése (`/manage-ride/<trip_id>`)**:
-  - Meghirdetett utazás adatainak módosítása (indulási/érkezési helyszín autokiegészítéssel, dátum és időpont, szabad helyek száma, ár/fő) élő OSRM térképes útvonal-frissítéssel.
-  - Meghirdetett utazás törlése megerősítő modállal.
-  - Jelentkező utasok kezelése (elfogadás / elutasítás), valamint a megerősített utasok kapcsolattartási telefonszámának megjelenítése.
-
-- 🔔 **Értesítési rendszer & Autentikáció (`/login`, `/register`)**:
-  - Globális értesítő jelvény a felső navigációs sávban (`X jelentkező` csengő ikonnal) és a profil menüben minden oldalon, ha jóváhagyásra váró foglalási igény érkezett.
-  - Munkamenet-alapú regisztráció, bejelentkezés és kijelentkezés.
-
-- ⭐ **Értékelések (`/reviews`)**:
-  - Interaktív, csillagos értékelő rendszer a lezajlott utazásokhoz.
+| Útvonal | Sablon | Leírás |
+| :--- | :--- | :--- |
+| `/` vagy `/home` | `home.html` | Kezdőlap gyorskeresővel és kiemelt utakkal |
+| `/search` | `index.html` | Interaktív térképes kereső és szűrőfelület |
+| `/ride/<trip_id>` | `ride_details.html` | Utazás részletei, árkalkulátor és helyfoglalás |
+| `/create-ride` | `create_ride.html` | Új utazás és jármű meghirdetése |
+| `/profile` | `profile.html` | Saját profil, utazások áttekintése és gyors jóváhagyás |
+| `/manage-ride/<trip_id>` | `manage_ride.html` | Saját hirdetés szerkesztése és utasok kezelése |
+| `/reviews` | `reviews.html` | Sofőrök és utazások értékelése |
+| `/login`, `/register` | `login.html`, `register.html` | Bejelentkezés és regisztráció |
 
 ---
 
 ## 🛠️ Technológiai stakk
 
-### Backend
-- **Python 3.x** & **Flask**
-- **Flask-SQLAlchemy** (ORM adatbázis-kezelés)
-- **PyMySQL** / **MySQL** (XAMPP környezet)
+| Réteg | Technológiák és szolgáltatások |
+| :--- | :--- |
+| **Backend** | Python 3.x, Flask, Flask-SQLAlchemy, PyMySQL, Werkzeug |
+| **Adatbázis** | MySQL (XAMPP környezet) |
+| **Frontend** | HTML5, CSS3, JavaScript (ES6), Bootstrap 5.3, Bootstrap Icons |
+| **Tipográfia & UI** | Google Fonts (*Bagel Fat One*, *Poppins*), Flatpickr (magyar lokalizációval) |
+| **Térkép & API-k** | Leaflet.js (OpenStreetMap), OSRM Routing API, Photon API, Nominatim API |
 
-### Frontend
-- **HTML5**, **CSS3**, **JavaScript (ES6)**
-- **Bootstrap 5.3** & **Bootstrap Icons**
-- **Google Fonts** (*Bagel Fat One*, *Poppins*)
-- **Leaflet.js** (OpenStreetMap csempékkel)
-- **Flatpickr** (Interaktív, magyar nyelvű dátum- és időválasztó)
+---
 
-### Külső API-k & Szolgáltatások
-- **OSRM (Open Source Routing Machine)** – Autós útvonaltervezés, távolság és menetidő számítás.
-- **Photon API (`photon.komoot.io`)** – Gyors, valós idejű település-autokiegészítés.
-- **Nominatim OpenStreetMap** – Geokódolás és koordináták feloldása.
+## 📂 Projekt felépítése
+
+```text
+RideWMy/
+├── app.py                  # Flask alkalmazás, útvonalak és üzleti logika
+├── models.py               # SQLAlchemy adatbázis-modellek (User, Car, Trip, Booking, Review)
+├── README.md               # Projekt dokumentáció
+└── templates/
+    ├── home.html           # Főoldal
+    ├── index.html          # Térképes kereső
+    ├── ride_details.html   # Utazás részletei és foglalás
+    ├── create_ride.html    # Út meghirdetése
+    ├── profile.html        # Saját profil és gyors jóváhagyás
+    ├── manage_ride.html    # Meghirdetett út kezelése
+    ├── reviews.html        # Értékelések
+    ├── login.html          # Bejelentkezés
+    └── register.html       # Regisztráció
+```
 
 ---
 
@@ -78,24 +103,27 @@ git clone [https://github.com/inczemihaly-rgb/RideWMy.git](https://github.com/in
 cd RideWMy
 ```
 
-### 2. Virtuális környezet és függőségek telepítése
+### 2. Virtuális környezet és csomagok telepítése
 ```bash
 python -m venv venv
+
 # Windows:
 venv\Scripts\activate
+
 # Linux / macOS:
 source venv/bin/activate
 
 pip install flask flask-sqlalchemy pymysql werkzeug
 ```
 
-### 3. Adatbázis beállítása (XAMPP)
-1. Indítsd el a XAMPP vezérlőpultban az **Apache** és a **MySQL** szolgáltatásokat.
+### 3. Adatbázis létrehozása (XAMPP)
+1. Indítsd el a XAMPP vezérlőpultban az **Apache** és a **MySQL** modulokat.
 2. Nyisd meg a **phpMyAdmin** felületet (`http://localhost/phpmyadmin`), és hozz létre egy új adatbázist `ridewmy` néven (`utf8mb4_general_ci` karakterkódolással).
-3. Az alkalmazás első indításkor automatikusan létrehozza a szükséges táblákat (`db.create_all()`).
 
-### 4. Alkalmazás indítása
+> **Megjegyzés:** Az alkalmazás az első indításkor automatikusan létrehozza az összes szükséges táblát a `db.create_all()` segítségével.
+
+### 4. Szerver indítása
 ```bash
 python app.py
 ```
-Ezután az alkalmazás elérhető a böngészőben a **`http://127.0.0.1:5000`** címen.
+Az alkalmazás ezt követően elérhető a böngészőben a **`http://127.0.0.1:5000`** címen.
